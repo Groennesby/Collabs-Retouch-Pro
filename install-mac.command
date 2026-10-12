@@ -56,13 +56,17 @@ cat <<EOF > "$APP_BUNDLE/Contents/Info.plist"
 EOF
 
 # 2. Copy Icons & Splash
-if [ -f "$DIR/softwareelements/Collabs Retouch Pro/Collabs_Retouch_Pro_Mascot.icns" ]; then
+if [ -f "$DIR/icon.icns" ]; then
+    cp -f "$DIR/icon.icns" "$APP_BUNDLE/Contents/Resources/icon.icns"
+elif [ -f "$DIR/softwareelements/Collabs Retouch Pro/Collabs_Retouch_Pro_Mascot.icns" ]; then
     cp -f "$DIR/softwareelements/Collabs Retouch Pro/Collabs_Retouch_Pro_Mascot.icns" "$APP_BUNDLE/Contents/Resources/icon.icns"
-elif [ -f "$DIR/../softwareelements/Collabs Retouch Pro/Collabs_Retouch_Pro_Mascot.icns" ]; then
-    cp -f "$DIR/../softwareelements/Collabs Retouch Pro/Collabs_Retouch_Pro_Mascot.icns" "$APP_BUNDLE/Contents/Resources/icon.icns"
 fi
 
-cp -f "$DIR/splashscreens/Collabs_Retouch_Pro_Splash_1_Editorial_Studio.jpg" "$APP_BUNDLE/Contents/Resources/splash.jpg" 2>/dev/null || true
+if [ -f "$DIR/Finalsplash.jpg" ]; then
+    cp -f "$DIR/Finalsplash.jpg" "$APP_BUNDLE/Contents/Resources/splash.jpg"
+elif [ -f "$DIR/splashscreens/Finalsplash.jpg" ]; then
+    cp -f "$DIR/splashscreens/Finalsplash.jpg" "$APP_BUNDLE/Contents/Resources/splash.jpg"
+fi
 
 # 3. Copy Application Payload
 cp -r "$DIR/app" "$APP_BUNDLE/Contents/Resources/"
