@@ -161,51 +161,70 @@ class RetouchEngine {
   }
 
   async loadImage(source) {
-    let img;
-    if (typeof source === 'string') {
-      img = new Image();
-      img.src = source;
-      await img.decode();
-    } else if (source instanceof File || source instanceof Blob) {
-      const url = URL.createObjectURL(source);
-      img = new Image();
-      img.src = url;
-      await img.decode();
-      URL.revokeObjectURL(url);
-    } else if (source instanceof HTMLImageElement) {
-      img = source;
+    try {
+      let img = new Image();
+      if (typeof source === 'string') {
+        img.src = source;
+        await img.decode();
+      } else if (source instanceof File || source instanceof Blob) {
+        const url = URL.createObjectURL(source);
+        img.src = url;
+        await img.decode();
+        URL.revokeObjectURL(url);
+      } else if (source instanceof HTMLImageElement) {
+        img = source;
+      }
+
+      const w = img.naturalWidth || img.width;
+      const h = img.naturalHeight || img.height;
+      if (!w || !h) return;
+
+      // Create OffscreenCanvas or fallback standard canvas for full resolution
+      let oc, octx;
+      if (typeof OffscreenCanvas !== 'undefined') {
+        oc = new OffscreenCanvas(w, h);
+        octx = oc.getContext('2d', { willReadFrequently: true });
+      } else {
+        oc = document.createElement('canvas');
+        oc.width = w;
+        oc.height = h;
+        octx = oc.getContext('2d');
+      }
+      octx.drawImage(img, 0, 0);
+      this.origImageData = octx.getImageData(0, 0, w, h);
+      this.retouchedImageData = new ImageData(new Uint8ClampedArray(this.origImageData.data), w, h);
+
+      // Create draft preview for instantaneous slider response
+      const maxDraftDim = 1600;
+      this.draftScale = Math.min(1, maxDraftDim / Math.max(w, h));
+      const dw = Math.round(w * this.draftScale);
+      const dh = Math.round(h * this.draftScale);
+      
+      let doc, doctx;
+      if (typeof OffscreenCanvas !== 'undefined') {
+        doc = new OffscreenCanvas(dw, dh);
+        doctx = doc.getContext('2d');
+      } else {
+        doc = document.createElement('canvas');
+        doc.width = dw;
+        doc.height = dh;
+        doctx = doc.getContext('2d');
+      }
+      doctx.drawImage(img, 0, 0, dw, dh);
+      this.draftOrigImageData = doctx.getImageData(0, 0, dw, dh);
+      this.draftRetouchedImageData = new ImageData(new Uint8ClampedArray(this.draftOrigImageData.data), dw, dh);
+
+      // Update metadata badge
+      const resEl = document.getElementById('imageResolution');
+      if (resEl) resEl.textContent = `${w} × ${h} px (True RAW 1:1)`;
+      const credEl = document.getElementById('creditRemaining');
+      if (credEl) credEl.textContent = '9,000 Exports Remaining';
+
+      this.fitToScreen();
+      this.dispatchProcessing(false);
+    } catch (err) {
+      console.warn("Could not load initial image:", err);
     }
-
-    const w = img.naturalWidth || img.width;
-    const h = img.naturalHeight || img.height;
-
-    // Create OffscreenCanvas for full resolution
-    const oc = new OffscreenCanvas(w, h);
-    const octx = oc.getContext('2d', { willReadFrequently: true });
-    octx.drawImage(img, 0, 0);
-    this.origImageData = octx.getImageData(0, 0, w, h);
-    this.retouchedImageData = new ImageData(new Uint8ClampedArray(this.origImageData.data), w, h);
-
-    // Create draft preview for instantaneous slider response
-    const maxDraftDim = 1600;
-    this.draftScale = Math.min(1, maxDraftDim / Math.max(w, h));
-    const dw = Math.round(w * this.draftScale);
-    const dh = Math.round(h * this.draftScale);
-    
-    const doc = new OffscreenCanvas(dw, dh);
-    const doctx = doc.getContext('2d');
-    doctx.drawImage(img, 0, 0, dw, dh);
-    this.draftOrigImageData = doctx.getImageData(0, 0, dw, dh);
-    this.draftRetouchedImageData = new ImageData(new Uint8ClampedArray(this.draftOrigImageData.data), dw, dh);
-
-    // Update metadata badge
-    const resEl = document.getElementById('imageResolution');
-    if (resEl) resEl.textContent = `${w} × ${h} px (True RAW 1:1)`;
-    const credEl = document.getElementById('creditRemaining');
-    if (credEl) credEl.textContent = '9,000 Exports Remaining';
-
-    this.fitToScreen();
-    this.dispatchProcessing(false);
   }
 
   fitToScreen() {
@@ -745,5 +764,6 @@ class RetouchEngine {
 // Global initialization
 window.addEventListener('DOMContentLoaded', () => {
   window.retouchEngine = new RetouchEngine();
-  window.retouchEngine.loadImage('../test_portrait_4000x6000.jpg');
+  // Try loading default test portrait if present, otherwise cleanly wait for user import
+  window.retouchEngine.loadImage('test_portrait_4000x6000.jpg').catch(() => {});
 });

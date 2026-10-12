@@ -1,4 +1,5 @@
 # Collabs Retouch Pro - Dependencies
+pywebview>=5.0.0
 pillow>=10.0.0
 # Note: Tkinter is part of Python standard library.
 # On macOS (Homebrew): brew install python-tk@3.12 (or matching Python version)

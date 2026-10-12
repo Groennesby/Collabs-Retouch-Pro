@@ -98,30 +98,51 @@ def show_native_error(title, message):
 
 def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
+    app_dir = os.path.join(base_dir, 'app')
+
+    # 1. First priority: High-Performance Studio Engine via pywebview
+    try:
+        import webview
+        sys.path.insert(0, app_dir)
+        import server as studio_server
+        srv = studio_server.run_server(1420)
+        import threading
+        t = threading.Thread(target=srv.serve_forever, daemon=True)
+        t.start()
+
+        window = webview.create_window(
+            'Collabs Retouch Pro — AI Portrait & RAW Studio',
+            'http://127.0.0.1:1420/index.html',
+            width=1440,
+            height=920,
+            min_size=(1024, 700),
+            background_color='#0E0E10'
+        )
+        webview.start()
+        return
+    except ImportError:
+        pass
+    except Exception as e:
+        print(f"[*] Webview note: {e}")
+
+    # 2. Second priority: Standard Tkinter Native fallback
     app_script = os.path.join(base_dir, 'src', 'app.py')
-    
-    # 1. Quick test on current runtime
     try:
         import tkinter
-        # If we are already running inside PyInstaller bundle or working python
         target_python = sys.executable
-        has_tk = True
     except ImportError:
-        has_tk = False
         target_python = find_working_python()
 
     if not target_python:
         err_msg = (
-            "Collabs Retouch Pro requires Tcl/Tk support.\n\n"
+            "Collabs Retouch Pro requires GUI support.\n\n"
             "Quick Fix for macOS:\n"
-            "• Homebrew: brew install tcl-tk python-tk@3.12\n"
-            "• Conda: conda install -c conda-forge tk\n"
-            "• Official Python: download Python with Tcl/Tk from python.org"
+            "• pip install pywebview\n"
+            "• or: brew install tcl-tk python-tk@3.12"
         )
-        show_native_error("Collabs Retouch Pro - Tkinter Required", err_msg)
+        show_native_error("Collabs Retouch Pro - Setup", err_msg)
         sys.exit(1)
 
-    # Otherwise execute with working target_python
     os.environ['PYTHONPATH'] = os.path.join(base_dir, 'src')
     cmd = [target_python, app_script] + sys.argv[1:]
     os.execv(target_python, cmd)

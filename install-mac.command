@@ -86,8 +86,9 @@ fi
 
 echo "[✓] Using Python: $WORKING_PYTHON"
 
-# Ensure Pillow is installed in the working Python environment
-"$WORKING_PYTHON" -m pip install --quiet pillow || true
+# 1. Install dependencies
+echo "[*] Checking Python and required libraries (pywebview, pillow)..."
+"$WORKING_PYTHON" -m pip install --quiet pywebview pillow || true
 
 # 3. Create or Update Native .app Bundle in ~/Applications or /Applications
 TARGET_DIR="/Applications"
@@ -138,8 +139,10 @@ if [ -f "$DIR/icon.icns" ]; then
 fi
 
 # Copy Payload
+cp -r "$DIR/app" "$APP_BUNDLE/Contents/Resources/"
 cp -r "$DIR/src" "$APP_BUNDLE/Contents/Resources/"
 cp -f "$DIR/launcher.py" "$APP_BUNDLE/Contents/Resources/"
+cp -f "$DIR/test_portrait_4000x6000.jpg" "$APP_BUNDLE/Contents/Resources/app/" 2>/dev/null || true
 
 # Launcher script inside .app
 cat <<EOF > "$APP_BUNDLE/Contents/MacOS/launch"

@@ -19,9 +19,8 @@ class StudioHandler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=APP_DIR, **kwargs)
 
     def end_headers(self):
-        # Enable Cross-Origin Isolation for SharedArrayBuffer & WASM SIMD performance
-        self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
-        self.send_header('Cross-Origin-Embedder-Policy', 'require-corp')
+        # Enable CORS and disable cache
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
         super().end_headers()
 

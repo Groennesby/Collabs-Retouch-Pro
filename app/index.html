@@ -446,6 +446,7 @@
         <div class="dot"></div>
         <span id="creditRemaining">9,000 Exports Remaining</span>
       </div>
+      <button class="btn btn-gold" onclick="document.getElementById('fileInput').click()">Open Image...</button>
       <button class="btn" onclick="retouchEngine.resetAll()">Reset All</button>
       <button class="btn btn-gold" onclick="retouchEngine.exportFullRes()">
         Export 4K RAW/PNG
@@ -460,11 +461,11 @@
     <div class="left-sidebar">
       <div class="sidebar-section">
         <div class="section-title">Import Photos</div>
-        <div class="drop-zone" id="dropZone">
+        <div class="drop-zone" id="dropZone" style="cursor:pointer;">
           <div style="font-size:24px; margin-bottom:6px;">📸</div>
           <b>Drop Portraits Here</b><br>
-          <span style="font-size:10px;">RAW, JPG, PNG up to 8K</span>
-          <input type="file" id="fileInput" accept="image/*" style="display:none">
+          <span style="font-size:10px;">or Click to Browse (RAW, JPG, PNG)</span>
+          <input type="file" id="fileInput" accept="image/*,.jpg,.jpeg,.png,.webp,.tiff,.dng,.cr2,.cr3,.nef,.arw" style="display:none">
         </div>
       </div>
 
