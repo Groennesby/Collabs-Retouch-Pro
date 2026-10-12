@@ -126,15 +126,15 @@ class RetouchEngine {
 
   initWorker() {
     this.worker.onmessage = (e) => {
-      const { action, elapsed, isDraft, buffer } = e.data;
+      const { action, elapsed, mode, buffer, width, height } = e.data;
       if (action === 'PROCESS_COMPLETE') {
         const processed = new Uint8ClampedArray(buffer);
-        if (isDraft) {
-          const w = Math.round(this.origImageData.width * this.draftScale);
-          const h = Math.round(this.origImageData.height * this.draftScale);
-          this.draftRetouchedImageData = new ImageData(processed, w, h);
+        if (mode === 'draft') {
+          this.draftRetouchedImageData = new ImageData(processed, width, height);
+        } else if (mode === 'preview') {
+          this.previewRetouchedImageData = new ImageData(processed, width, height);
         } else {
-          this.retouchedImageData = new ImageData(processed, this.origImageData.width, this.origImageData.height);
+          this.retouchedImageData = new ImageData(processed, width, height);
         }
         
         const renderTimeEl = document.getElementById('renderTime');
@@ -145,7 +145,7 @@ class RetouchEngine {
         if (this.pendingRequest) {
           const req = this.pendingRequest;
           this.pendingRequest = null;
-          this.dispatchProcessing(req.isDraft);
+          this.dispatchProcessing(req.mode);
         }
       }
     };
@@ -194,11 +194,13 @@ class RetouchEngine {
       this.origImageData = octx.getImageData(0, 0, w, h);
       this.retouchedImageData = new ImageData(new Uint8ClampedArray(this.origImageData.data), w, h);
 
-      // Create draft preview for instantaneous slider response
-      const maxDraftDim = 800; // Fast 60fps responsive draft
-      this.draftScale = Math.min(1, maxDraftDim / Math.max(w, h));
-      const dw = Math.round(w * this.draftScale);
-      const dh = Math.round(h * this.draftScale);
+      // Adaptive High-Quality Screen Preview (Lightcraft standard)
+      // Lightcraft renders at screen display viewport resolution (typically 1920-2560px), NOT degraded 800px!
+      const maxDisplayDim = Math.max(window.innerWidth || 1920, window.innerHeight || 1200) * (window.devicePixelRatio || 1);
+      const displayCap = Math.min(2560, Math.max(1600, maxDisplayDim));
+      this.displayScale = Math.min(1.0, displayCap / Math.max(w, h));
+      const dw = Math.round(w * this.displayScale);
+      const dh = Math.round(h * this.displayScale);
       
       let doc, doctx;
       if (typeof OffscreenCanvas !== 'undefined') {
@@ -211,8 +213,19 @@ class RetouchEngine {
         doctx = doc.getContext('2d');
       }
       doctx.drawImage(img, 0, 0, dw, dh);
-      this.draftOrigImageData = doctx.getImageData(0, 0, dw, dh);
-      this.draftRetouchedImageData = new ImageData(new Uint8ClampedArray(this.draftOrigImageData.data), dw, dh);
+      this.previewOrigImageData = doctx.getImageData(0, 0, dw, dh);
+      this.previewRetouchedImageData = new ImageData(new Uint8ClampedArray(this.previewOrigImageData.data), dw, dh);
+
+      // Create Fast Interactive Drag Buffer (1280px crisp proxy, exact Lightcraft draft ratio 0.6)
+      const draftW = Math.round(dw * 0.6);
+      const draftH = Math.round(dh * 0.6);
+      let draftC = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(draftW, draftH) : document.createElement('canvas');
+      draftC.width = draftW;
+      draftC.height = draftH;
+      const draftCtx = draftC.getContext('2d');
+      draftCtx.drawImage(img, 0, 0, draftW, draftH);
+      this.draftOrigImageData = draftCtx.getImageData(0, 0, draftW, draftH);
+      this.draftRetouchedImageData = new ImageData(new Uint8ClampedArray(this.draftOrigImageData.data), draftW, draftH);
 
       // Update metadata badge
       const resEl = document.getElementById('imageResolution');
@@ -255,16 +268,24 @@ class RetouchEngine {
     this.render();
   }
 
-  dispatchProcessing(isDraft = false) {
+  dispatchProcessing(mode = 'preview') {
     if (!this.origImageData) return;
 
     if (this.workerPending) {
-      this.pendingRequest = { isDraft };
+      this.pendingRequest = { mode };
       return;
     }
 
     this.workerPending = true;
-    const sourceData = isDraft ? this.draftOrigImageData : this.origImageData;
+    let sourceData;
+    if (mode === 'draft') {
+      sourceData = this.draftOrigImageData || this.origImageData;
+    } else if (mode === 'preview') {
+      sourceData = this.previewOrigImageData || this.origImageData;
+    } else {
+      sourceData = this.origImageData;
+    }
+
     const copyBuffer = sourceData.data.slice().buffer;
 
     this.worker.postMessage({
@@ -274,7 +295,7 @@ class RetouchEngine {
       width: sourceData.width,
       height: sourceData.height,
       buffer: copyBuffer,
-      isDraft
+      mode
     }, [copyBuffer]);
   }
 
@@ -293,7 +314,7 @@ class RetouchEngine {
     const renderW = iw * this.zoom;
     const renderH = ih * this.zoom;
 
-    // Use fast draft preview during active slider adjustment, full res when idle
+    // Use appropriate preview buffer: draft during drag, crystal-clear preview when idle
     let showCanvas;
     if (this.isAdjusting && this.draftRetouchedImageData) {
       const dw = this.draftRetouchedImageData.width;
@@ -303,6 +324,14 @@ class RetouchEngine {
       }
       this._draftCanvas.getContext('2d').putImageData(this.draftRetouchedImageData, 0, 0);
       showCanvas = this._draftCanvas;
+    } else if (this.previewRetouchedImageData) {
+      const pw = this.previewRetouchedImageData.width;
+      const ph = this.previewRetouchedImageData.height;
+      if (!this._previewCanvas || this._previewCanvas.width !== pw || this._previewCanvas.height !== ph) {
+        this._previewCanvas = new OffscreenCanvas(pw, ph);
+      }
+      this._previewCanvas.getContext('2d').putImageData(this.previewRetouchedImageData, 0, 0);
+      showCanvas = this._previewCanvas;
     } else {
       if (!this._fullCanvas || this._fullCanvas.width !== iw || this._fullCanvas.height !== ih) {
         this._fullCanvas = new OffscreenCanvas(iw, ih);
@@ -316,9 +345,12 @@ class RetouchEngine {
       const splitX = cw * this.splitPos;
       
       // 1. Draw Before (Original) on left side of split
-      if (!this._origCanvas || this._origCanvas.width !== iw || this._origCanvas.height !== ih) {
-        this._origCanvas = new OffscreenCanvas(iw, ih);
-        this._origCanvas.getContext('2d').putImageData(this.origImageData, 0, 0);
+      const origToShow = this.previewOrigImageData || this.origImageData;
+      const ow = origToShow.width;
+      const oh = origToShow.height;
+      if (!this._origCanvas || this._origCanvas.width !== ow || this._origCanvas.height !== oh) {
+        this._origCanvas = new OffscreenCanvas(ow, oh);
+        this._origCanvas.getContext('2d').putImageData(origToShow, 0, 0);
       }
 
       this.ctx.save();
@@ -364,9 +396,12 @@ class RetouchEngine {
       this.ctx.fillStyle = '#FFE606';
       this.ctx.fillText('AFTER (RETOUCH PRO)', Math.min(cw - 90, splitX + 90), 30);
     } else if (this.splitMode === 'before') {
-      if (!this._origCanvas || this._origCanvas.width !== iw || this._origCanvas.height !== ih) {
-        this._origCanvas = new OffscreenCanvas(iw, ih);
-        this._origCanvas.getContext('2d').putImageData(this.origImageData, 0, 0);
+      const origToShow = this.previewOrigImageData || this.origImageData;
+      const ow = origToShow.width;
+      const oh = origToShow.height;
+      if (!this._origCanvas || this._origCanvas.width !== ow || this._origCanvas.height !== oh) {
+        this._origCanvas = new OffscreenCanvas(ow, oh);
+        this._origCanvas.getContext('2d').putImageData(origToShow, 0, 0);
       }
       this.ctx.drawImage(this._origCanvas, this.panX, this.panY, renderW, renderH);
     } else {
@@ -489,13 +524,13 @@ class RetouchEngine {
         }
 
         // Immediate draft update for real-time live interaction
-        this.dispatchProcessing(true);
+        this.dispatchProcessing('draft');
       });
 
       slider.addEventListener('change', () => {
-        // Full resolution update on release
+        // High resolution screen preview update on release
         this.isAdjusting = false;
-        this.dispatchProcessing(false);
+        this.dispatchProcessing('preview');
       });
     });
   }
@@ -522,9 +557,9 @@ class RetouchEngine {
           this.params[paramName] = val;
           const valDisp = document.getElementById(`val_hslCurrent_${prop}`);
           if (valDisp) valDisp.textContent = val > 0 ? `+${val}` : val;
-          this.dispatchProcessing(true);
+          this.dispatchProcessing('draft');
         });
-        slider.addEventListener('change', () => this.dispatchProcessing(false));
+        slider.addEventListener('change', () => this.dispatchProcessing('preview'));
       }
     });
   }
@@ -611,13 +646,13 @@ class RetouchEngine {
       this.curveLut = this.buildCurveLut();
       this.params.curveLut = this.curveLut;
       drawCurve();
-      this.dispatchProcessing(true);
+      this.dispatchProcessing('draft');
     });
 
     window.addEventListener('mouseup', () => {
-      if (draggingPoint) {
-        draggingPoint = null;
-        this.dispatchProcessing(false);
+      if (draggedPoint !== null) {
+        draggedPoint = null;
+        this.dispatchProcessing('preview');
       }
     });
   }

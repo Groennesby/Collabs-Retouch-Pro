@@ -4,7 +4,7 @@
 // Created by Dave Groennesby (Collabs Software)
 
 self.onmessage = async function(e) {
-  const { action, id, params, width, height, buffer, maskBuffer, isDraft } = e.data;
+  const { action, id, params, width, height, buffer, maskBuffer, mode } = e.data;
   
   if (action === 'PROCESS_IMAGE') {
     const startTime = performance.now();
@@ -12,7 +12,7 @@ self.onmessage = async function(e) {
     const mask = maskBuffer ? new Uint8Array(maskBuffer) : null;
     
     // Execute real fused pixel pipeline
-    processPixels(pixels, width, height, params, mask, isDraft);
+    processPixels(pixels, width, height, params, mask, mode);
     
     const elapsed = Math.round(performance.now() - startTime);
     
@@ -20,14 +20,17 @@ self.onmessage = async function(e) {
       action: 'PROCESS_COMPLETE',
       id,
       elapsed,
-      isDraft,
+      mode,
+      width,
+      height,
       buffer: pixels.buffer
     }, [pixels.buffer]);
   }
 };
 
-function processPixels(data, w, h, p, mask, isDraft) {
+function processPixels(data, w, h, p, mask, mode) {
   const len = w * h;
+  const isDraft = mode === 'draft';
 
   // 1. Lightcraft Core Tone & Color Temperature (Kelvin + Tint + Exposure + Dynamic Range)
   applyLightcraftToneAndWB(data, len, p);
@@ -49,7 +52,7 @@ function processPixels(data, w, h, p, mask, isDraft) {
 
   // 5. Evoto Portrait Skin & Frequency Separation Module
   if (p.skinSmooth > 0 || p.freqSepLow > 0 || p.freqSepHigh > 0 || p.blemishRemoval > 0 || p.strayHair > 0) {
-    applyFrequencySeparationAndSkin(data, w, h, p, mask);
+    applyFrequencySeparationAndSkin(data, w, h, p, mask, isDraft);
   }
 
   // 6. Specular Glare & Face Shine Removal
@@ -403,7 +406,7 @@ function applyCurveLut(data, len, lut) {
 // ==========================================
 // 5. EVOTO FREQUENCY SEPARATION & SKIN SMOOTHING
 // ==========================================
-function applyFrequencySeparationAndSkin(data, w, h, p, mask) {
+function applyFrequencySeparationAndSkin(data, w, h, p, mask, isDraft) {
   const len = w * h;
   const radius = Math.max(2, Math.min(14, Math.round((p.skinSmooth || 50) * 0.12)));
   const smoothStrength = (p.skinSmooth || 40) / 100;
@@ -412,7 +415,7 @@ function applyFrequencySeparationAndSkin(data, w, h, p, mask) {
 
   const orig = new Uint8ClampedArray(data);
   const low = new Uint8ClampedArray(len * 4);
-  fastBilateralApproximation(orig, low, w, h, radius, 30);
+  fastBilateralApproximation(orig, low, w, h, radius, 30, isDraft);
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
@@ -490,9 +493,9 @@ function isSkinColor(r, g, b) {
   return (r > 45 && g > 25 && b > 15 && (r > g) && (r > b) && ((max - min) > 10));
 }
 
-function fastBilateralApproximation(src, dst, w, h, radius, sigmaRange) {
-  // Step sampling for instant real-time response on high-res images
-  const step = Math.max(1, Math.floor(Math.max(w, h) / 1000));
+function fastBilateralApproximation(src, dst, w, h, radius, sigmaRange, isDraft) {
+  // Lightcraft speed rule: draft uses fast step sampling; full/preview uses exact box-bilateral
+  const step = isDraft ? Math.max(1, Math.floor(Math.max(w, h) / 700)) : 1;
   const effectiveRadius = Math.max(1, Math.round(radius / step));
   const temp = new Float32Array(w * h * 3);
 
@@ -526,7 +529,7 @@ function fastBilateralApproximation(src, dst, w, h, radius, sigmaRange) {
 
   // Vertical pass
   for (let y = 0; y < h; y++) {
-    const srcY = Math.min(h - 1, Math.floor(y / step) * step);
+    const srcY = (step > 1) ? Math.min(h - 1, Math.floor(y / step) * step) : y;
     for (let x = 0; x < w; x++) {
       const tidx0 = (srcY * w + x) * 3;
       let rSum = 0, gSum = 0, bSum = 0, wSum = 0;
