@@ -462,31 +462,49 @@ function applyFrequencySeparationAndSkin(data, w, h, p, mask) {
       const gSmoothLow = gO * (1 - smoothStrength) + gL * smoothStrength;
       const bSmoothLow = bO * (1 - smoothStrength) + bL * smoothStrength;
 
-      // Recombine: Low + High - 128
-      const texturePreserve = (p.freqSepHigh !== undefined ? p.freqSepHigh : 100) / 100;
-      data[idx] = clamp(rSmoothLow + (rHigh - 128) * texturePreserve);
-      data[idx + 1] = clamp(gSmoothLow + (gHigh - 128) * texturePreserve);
-      data[idx + 2] = clamp(bSmoothLow + (bHigh - 128) * texturePreserve);
+    // Recombine: Low + High - 128
+    const texturePreserve = (p.freqSepHigh !== undefined ? p.freqSepHigh : 100) / 100;
+    const finalR = clamp(rSmoothLow + (rHigh - 128) * texturePreserve);
+    const finalG = clamp(gSmoothLow + (gHigh - 128) * texturePreserve);
+    const finalB = clamp(bSmoothLow + (bHigh - 128) * texturePreserve);
+
+    // Apply Low-Freq Color Evenness
+    if (p.freqSepLow > 0) {
+      const evenStr = (p.freqSepLow || 0) / 100 * 0.5;
+      data[idx] = clamp(finalR * (1 - evenStr) + rL * evenStr);
+      data[idx + 1] = clamp(finalG * (1 - evenStr) + gL * evenStr);
+      data[idx + 2] = clamp(finalB * (1 - evenStr) + bL * evenStr);
+    } else {
+      data[idx] = finalR;
+      data[idx + 1] = finalG;
+      data[idx + 2] = finalB;
     }
   }
 }
+}
 
 function isSkinColor(r, g, b) {
-  return (r > 60 && g > 40 && b > 20 && r > g && g > b && (r - g) >= 10);
+  // Broad, accurate skin detection across diverse skin tones and studio lighting
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  return (r > 45 && g > 25 && b > 15 && (r > g) && (r > b) && ((max - min) > 10));
 }
 
 function fastBilateralApproximation(src, dst, w, h, radius, sigmaRange) {
+  // Step sampling for instant real-time response on high-res images
+  const step = Math.max(1, Math.floor(Math.max(w, h) / 1000));
+  const effectiveRadius = Math.max(1, Math.round(radius / step));
   const temp = new Float32Array(w * h * 3);
 
   // Horizontal pass
-  for (let y = 0; y < h; y++) {
+  for (let y = 0; y < h; y += step) {
     for (let x = 0; x < w; x++) {
       const idx = (y * w + x) * 4;
       let rSum = 0, gSum = 0, bSum = 0, wSum = 0;
       const r0 = src[idx], g0 = src[idx + 1], b0 = src[idx + 2];
 
-      for (let k = -radius; k <= radius; k++) {
-        const nx = Math.min(w - 1, Math.max(0, x + k));
+      for (let k = -effectiveRadius; k <= effectiveRadius; k++) {
+        const nx = Math.min(w - 1, Math.max(0, x + k * step));
         const nIdx = (y * w + nx) * 4;
         const r1 = src[nIdx], g1 = src[nIdx + 1], b1 = src[nIdx + 2];
 
@@ -500,21 +518,22 @@ function fastBilateralApproximation(src, dst, w, h, radius, sigmaRange) {
       }
 
       const tidx = (y * w + x) * 3;
-      temp[tidx] = rSum / wSum;
-      temp[tidx + 1] = gSum / wSum;
-      temp[tidx + 2] = bSum / wSum;
+      temp[tidx] = rSum / (wSum || 1);
+      temp[tidx + 1] = gSum / (wSum || 1);
+      temp[tidx + 2] = bSum / (wSum || 1);
     }
   }
 
   // Vertical pass
   for (let y = 0; y < h; y++) {
+    const srcY = Math.min(h - 1, Math.floor(y / step) * step);
     for (let x = 0; x < w; x++) {
-      const tidx0 = (y * w + x) * 3;
+      const tidx0 = (srcY * w + x) * 3;
       let rSum = 0, gSum = 0, bSum = 0, wSum = 0;
       const r0 = temp[tidx0], g0 = temp[tidx0 + 1], b0 = temp[tidx0 + 2];
 
-      for (let k = -radius; k <= radius; k++) {
-        const ny = Math.min(h - 1, Math.max(0, y + k));
+      for (let k = -effectiveRadius; k <= effectiveRadius; k++) {
+        const ny = Math.min(h - 1, Math.max(0, srcY + k * step));
         const ntidx = (ny * w + x) * 3;
         const r1 = temp[ntidx], g1 = temp[ntidx + 1], b1 = temp[ntidx + 2];
 
@@ -528,9 +547,9 @@ function fastBilateralApproximation(src, dst, w, h, radius, sigmaRange) {
       }
 
       const oIdx = (y * w + x) * 4;
-      dst[oIdx] = clamp(rSum / wSum);
-      dst[oIdx + 1] = clamp(gSum / wSum);
-      dst[oIdx + 2] = clamp(bSum / wSum);
+      dst[oIdx] = clamp(rSum / (wSum || 1));
+      dst[oIdx + 1] = clamp(gSum / (wSum || 1));
+      dst[oIdx + 2] = clamp(bSum / (wSum || 1));
       dst[oIdx + 3] = src[oIdx + 3];
     }
   }
@@ -544,12 +563,12 @@ function applyGlareRemoval(data, len, p) {
   for (let i = 0; i < len * 4; i += 4) {
     const r = data[i], g = data[i + 1], b = data[i + 2];
     const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-    if (lum > 215) {
+    if (lum > 170) {
       const maxC = Math.max(r, g, b);
       const minC = Math.min(r, g, b);
       const sat = maxC === 0 ? 0 : (maxC - minC) / maxC;
-      if (sat < 0.28) {
-        const diff = (lum - 215) * strength * 0.75;
+      if (sat < 0.40) {
+        const diff = (lum - 170) * strength * 0.85;
         data[i] = clamp(r - diff);
         data[i + 1] = clamp(g - diff);
         data[i + 2] = clamp(b - diff);
@@ -566,22 +585,32 @@ function applyEyeAndTeethEnhancement(data, w, h, p, mask) {
   const eyeStr = (p.eyeBrighten || 0) / 100;
 
   for (let i = 0; i < w * h * 4; i += 4) {
-    const r = data[i], g = data[i + 1], b = data[i + 2];
+    let r = data[i], g = data[i + 1], b = data[i + 2];
     const lum = 0.299 * r + 0.587 * g + 0.114 * b;
 
-    // Teeth: slightly yellowish whites in mid-to-high luminance
-    if (teethStr > 0 && lum > 135 && lum < 240 && r > b && (r - b) < 55) {
-      const avg = (r + g + b) / 3;
-      data[i] = clamp(r * (1 - teethStr * 0.55) + avg * (teethStr * 0.55) + teethStr * 10);
-      data[i + 1] = clamp(g * (1 - teethStr * 0.55) + avg * (teethStr * 0.55) + teethStr * 10);
-      data[i + 2] = clamp(b * (1 - teethStr * 0.3) + avg * (teethStr * 0.3) + teethStr * 14);
-    }
+    // High brightness facial zones: eyes / teeth
+    if (lum > 130) {
+      // Teeth Whitening: Desaturate yellow tones (high R and G, lower B)
+      if (teethStr > 0 && r > b && g > b) {
+        const yellowTinge = Math.min(r, g) - b;
+        if (yellowTinge > 10) {
+          b = clamp(b + yellowTinge * teethStr * 0.9);
+          r = clamp(r + (lum - r) * teethStr * 0.4);
+          g = clamp(g + (lum - g) * teethStr * 0.4);
+        }
+      }
 
-    // Eyes: catchlights & sclera enhancement
-    if (eyeStr > 0 && lum > 195) {
-      data[i] = clamp(r * (1 + eyeStr * 0.16));
-      data[i + 1] = clamp(g * (1 + eyeStr * 0.16));
-      data[i + 2] = clamp(b * (1 + eyeStr * 0.22));
+      // Eye Catchlight & Pop: Boost sclera and iris catchlight luminosity
+      if (eyeStr > 0 && lum > 150) {
+        const boost = (lum / 255) * eyeStr * 35;
+        r = clamp(r + boost);
+        g = clamp(g + boost);
+        b = clamp(b + boost);
+      }
+
+      data[i] = r;
+      data[i + 1] = g;
+      data[i + 2] = b;
     }
   }
 }

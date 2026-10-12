@@ -67,16 +67,16 @@ class RetouchEngine {
 
   getDefaultParams() {
     return {
-      // 1. Evoto Portrait AI
-      blemishRemoval: 45,
-      skinSmooth: 50,
-      freqSepLow: 50,
+      // 1. Evoto Portrait AI (Start clean at 0 so user sees 100% visible before/after delta)
+      blemishRemoval: 0,
+      skinSmooth: 0,
+      freqSepLow: 0,
       freqSepHigh: 100,
-      glareRemoval: 30,
-      faceShine: 20,
-      teethWhiten: 35,
-      eyeBrighten: 40,
-      strayHair: 25,
+      glareRemoval: 0,
+      faceShine: 0,
+      teethWhiten: 0,
+      eyeBrighten: 0,
+      strayHair: 0,
       faceSculpt: 0,
       
       // 2. Lightcraft Light & Tone
@@ -88,7 +88,7 @@ class RetouchEngine {
       shadows: 0,   // -100 to +100
       whites: 0,    // -100 to +100
       blacks: 0,    // -100 to +100
-      vibrance: 10, // -100 to +100
+      vibrance: 0,  // -100 to +100
       saturation: 0,// -100 to +100
 
       // 3. Effects, Optics & Background
@@ -195,7 +195,7 @@ class RetouchEngine {
       this.retouchedImageData = new ImageData(new Uint8ClampedArray(this.origImageData.data), w, h);
 
       // Create draft preview for instantaneous slider response
-      const maxDraftDim = 1600;
+      const maxDraftDim = 800; // Fast 60fps responsive draft
       this.draftScale = Math.min(1, maxDraftDim / Math.max(w, h));
       const dw = Math.round(w * this.draftScale);
       const dh = Math.round(h * this.draftScale);
@@ -293,26 +293,39 @@ class RetouchEngine {
     const renderW = iw * this.zoom;
     const renderH = ih * this.zoom;
 
-    const imgDataToShow = this.retouchedImageData || this.origImageData;
-    
-    const tempCanvas = new OffscreenCanvas(iw, ih);
-    const tempCtx = tempCanvas.getContext('2d');
-    tempCtx.putImageData(imgDataToShow, 0, 0);
+    // Use fast draft preview during active slider adjustment, full res when idle
+    let showCanvas;
+    if (this.isAdjusting && this.draftRetouchedImageData) {
+      const dw = this.draftRetouchedImageData.width;
+      const dh = this.draftRetouchedImageData.height;
+      if (!this._draftCanvas || this._draftCanvas.width !== dw || this._draftCanvas.height !== dh) {
+        this._draftCanvas = new OffscreenCanvas(dw, dh);
+      }
+      this._draftCanvas.getContext('2d').putImageData(this.draftRetouchedImageData, 0, 0);
+      showCanvas = this._draftCanvas;
+    } else {
+      if (!this._fullCanvas || this._fullCanvas.width !== iw || this._fullCanvas.height !== ih) {
+        this._fullCanvas = new OffscreenCanvas(iw, ih);
+      }
+      this._fullCanvas.getContext('2d').putImageData(this.retouchedImageData || this.origImageData, 0, 0);
+      showCanvas = this._fullCanvas;
+    }
 
     // Apply Split-View Wipe
     if (this.splitMode === 'split') {
       const splitX = cw * this.splitPos;
       
       // 1. Draw Before (Original) on left side of split
-      const origCanvas = new OffscreenCanvas(iw, ih);
-      const oCtx = origCanvas.getContext('2d');
-      oCtx.putImageData(this.origImageData, 0, 0);
+      if (!this._origCanvas || this._origCanvas.width !== iw || this._origCanvas.height !== ih) {
+        this._origCanvas = new OffscreenCanvas(iw, ih);
+        this._origCanvas.getContext('2d').putImageData(this.origImageData, 0, 0);
+      }
 
       this.ctx.save();
       this.ctx.beginPath();
       this.ctx.rect(0, 0, splitX, ch);
       this.ctx.clip();
-      this.ctx.drawImage(origCanvas, this.panX, this.panY, renderW, renderH);
+      this.ctx.drawImage(this._origCanvas, this.panX, this.panY, renderW, renderH);
       this.ctx.restore();
 
       // 2. Draw After (Retouched) on right side of split
@@ -320,7 +333,7 @@ class RetouchEngine {
       this.ctx.beginPath();
       this.ctx.rect(splitX, 0, cw - splitX, ch);
       this.ctx.clip();
-      this.ctx.drawImage(tempCanvas, this.panX, this.panY, renderW, renderH);
+      this.ctx.drawImage(showCanvas, this.panX, this.panY, renderW, renderH);
       this.ctx.restore();
 
       // 3. Draw Split Line & Handle
@@ -351,12 +364,14 @@ class RetouchEngine {
       this.ctx.fillStyle = '#FFE606';
       this.ctx.fillText('AFTER (RETOUCH PRO)', Math.min(cw - 90, splitX + 90), 30);
     } else if (this.splitMode === 'before') {
-      const origCanvas = new OffscreenCanvas(iw, ih);
-      origCanvas.getContext('2d').putImageData(this.origImageData, 0, 0);
-      this.ctx.drawImage(origCanvas, this.panX, this.panY, renderW, renderH);
+      if (!this._origCanvas || this._origCanvas.width !== iw || this._origCanvas.height !== ih) {
+        this._origCanvas = new OffscreenCanvas(iw, ih);
+        this._origCanvas.getContext('2d').putImageData(this.origImageData, 0, 0);
+      }
+      this.ctx.drawImage(this._origCanvas, this.panX, this.panY, renderW, renderH);
     } else {
       // After mode (100% Retouched)
-      this.ctx.drawImage(tempCanvas, this.panX, this.panY, renderW, renderH);
+      this.ctx.drawImage(showCanvas, this.panX, this.panY, renderW, renderH);
     }
   }
 
@@ -462,6 +477,7 @@ class RetouchEngine {
       slider.addEventListener('input', (e) => {
         const val = parseFloat(e.target.value);
         this.params[param] = val;
+        this.isAdjusting = true;
         if (valDisplay) {
           if (param === 'wbTemp') {
             valDisplay.textContent = `${val}K`;
@@ -472,12 +488,13 @@ class RetouchEngine {
           }
         }
 
-        // Immediate draft update for 60fps interaction
+        // Immediate draft update for real-time live interaction
         this.dispatchProcessing(true);
       });
 
       slider.addEventListener('change', () => {
         // Full resolution update on release
+        this.isAdjusting = false;
         this.dispatchProcessing(false);
       });
     });
