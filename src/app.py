@@ -15,7 +15,7 @@ class CollabsRetouchProApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Collabs Retouch Pro - Native Suite")
-        self.root.geometry("1400,900")
+        self.root.geometry("1400x900")
         self.root.configure(bg="#121212")
 
         self.current_image_path = None
