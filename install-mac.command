@@ -18,14 +18,9 @@ fi
 APP_BUNDLE="$TARGET_DIR/Collabs Retouch Pro.app"
 echo "=== COLLABS RETOUCH PRO — MACOS INSTALLER ==="
 
-# Check for pre-built release package or download
-if [ -f "$DIR/macOS/Collabs_Retouch_Pro_1.0.0_macOS_App.zip" ]; then
-    echo "[*] Found pre-built macOS application package, installing directly..."
-    unzip -q -o "$DIR/macOS/Collabs_Retouch_Pro_1.0.0_macOS_App.zip" -d "$TARGET_DIR"
-    echo "[*] Application installed in $APP_BUNDLE"
-    open "$APP_BUNDLE" 2>/dev/null || true
-    exit 0
-fi
+# 1. Install dependencies
+echo "[*] Checking Python and required libraries (Pillow)..."
+python3 -m pip install --quiet pillow || python -m pip install --quiet pillow || true
 
 echo "[*] Creating macOS Application bundle at: $APP_BUNDLE"
 
@@ -101,4 +96,5 @@ chmod +x "$APP_BUNDLE/Contents/MacOS/launch"
 
 echo "=== INSTALLATION COMPLETE ==="
 echo "[✓] Collabs Retouch Pro.app has been installed to $APP_BUNDLE"
-echo "[*] You can now launch it directly from Finder or Spotlight!"
+echo "[*] Launching Collabs Retouch Pro..."
+open "$APP_BUNDLE" 2>/dev/null || python3 "$APP_BUNDLE/Contents/Resources/src/app.py"
