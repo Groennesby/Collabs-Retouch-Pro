@@ -7,16 +7,17 @@
   <link rel="icon" href="../splashscreens/Collabs_Retouch_Pro_RP_Icon.png">
   <style>
     :root {
-      --bg-dark: #0E0E10;
-      --bg-panel: #141417;
-      --bg-subpanel: #1A1A1F;
-      --bg-hover: #222228;
-      --border-color: #27272E;
+      --bg-dark: #08080A;
+      --bg-panel: #0D0D11;
+      --bg-subpanel: #131318;
+      --bg-hover: #1C1C24;
+      --border-color: #23232D;
       --accent-gold: #FFE606;
-      --accent-gold-hover: #FFF04D;
-      --text-main: #EEEEEE;
-      --text-muted: #8E8E98;
-      --text-dark: #121214;
+      --accent-gold-hover: #FFF44F;
+      --accent-cyan: #00F0FF;
+      --text-main: #F4F4F6;
+      --text-muted: #9494A0;
+      --text-dark: #0A0A0C;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -31,62 +32,78 @@
       user-select: none;
     }
 
-    /* TOP HEADER */
+    /* CYBERPUNK / MATRIX GLOW ACCENTS */
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: radial-gradient(circle at 50% -20%, rgba(255, 230, 6, 0.04) 0%, rgba(0, 240, 255, 0.02) 40%, transparent 70%);
+      pointer-events: none;
+      z-index: 999;
+    }
+
     header {
-      background: var(--bg-panel);
-      height: 54px;
+      background: linear-gradient(180deg, #131318 0%, #0D0D11 100%);
+      height: 58px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 16px;
+      padding: 0 20px;
       border-bottom: 1px solid var(--border-color);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
       z-index: 10;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
 
     .brand img {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(255, 230, 6, 0.25);
+      border: 1px solid rgba(255, 230, 6, 0.4);
     }
 
     .brand-title {
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
       color: #FFFFFF;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
 
     .badge-pro {
-      background: var(--accent-gold);
+      background: linear-gradient(135deg, #FFE606 0%, #FFB800 100%);
       color: var(--text-dark);
       font-size: 10px;
-      font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 4px;
-      letter-spacing: 0.5px;
+      font-weight: 900;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.8px;
+      box-shadow: 0 0 10px rgba(255, 230, 6, 0.4);
     }
 
     .slogan-banner {
       font-size: 11px;
       color: var(--text-muted);
-      background: rgba(255, 230, 6, 0.08);
-      border: 1px solid rgba(255, 230, 6, 0.2);
-      padding: 4px 12px;
-      border-radius: 20px;
+      background: linear-gradient(90deg, rgba(255, 230, 6, 0.06) 0%, rgba(0, 240, 255, 0.04) 100%);
+      border: 1px solid rgba(255, 230, 6, 0.25);
+      padding: 5px 16px;
+      border-radius: 30px;
       font-style: italic;
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.05);
     }
     .slogan-banner b {
       color: var(--accent-gold);
       font-style: normal;
+      text-shadow: 0 0 8px rgba(255, 230, 6, 0.4);
     }
 
     .header-actions {
@@ -285,7 +302,7 @@
 
     /* RIGHT CONTROLS SIDEBAR */
     .right-sidebar {
-      width: 360px;
+      width: 380px;
       background: var(--bg-panel);
       border-left: 1px solid var(--border-color);
       display: flex;
@@ -310,6 +327,7 @@
       letter-spacing: 0.5px;
       cursor: pointer;
       border-bottom: 2px solid transparent;
+      white-space: nowrap;
     }
     .tab-btn.active {
       color: var(--accent-gold);
@@ -324,11 +342,46 @@
       gap: 16px;
     }
 
-    .panel-group {
-      background: var(--bg-subpanel);
+    /* SLICK NEON SLIDERS & INPUTS */
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      background: var(--bg-dark);
+      border-radius: 3px;
+      outline: none;
       border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 12px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent-gold);
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255, 230, 6, 0.6);
+      transition: transform 0.1s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+      background: #FFF;
+    }
+
+    .panel-group {
+      background: linear-gradient(135deg, var(--bg-subpanel) 0%, rgba(20,20,27,0.8) 100%);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    .panel-group::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; width: 3px; height: 100%;
+      background: var(--accent-gold);
+      opacity: 0.7;
     }
 
     .group-header {
@@ -396,6 +449,30 @@
       cursor: crosshair;
       border: 1px solid var(--border-color);
     }
+
+    /* HSL Pill Selectors */
+    .hsl-bands-nav {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .hsl-band-btn {
+      padding: 4px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-dark);
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+    .hsl-band-btn.active {
+      border-color: var(--accent-gold);
+      color: var(--accent-gold);
+      background: rgba(255, 230, 6, 0.1);
+    }
   </style>
 </head>
 <body>
@@ -407,13 +484,13 @@
       <div>
         <div class="brand-title">
           COLLABS RETOUCH PRO
-          <span class="badge-pro">STUDIO AI</span>
+          <span class="badge-pro">FUSED STUDIO</span>
         </div>
       </div>
     </div>
 
     <div class="slogan-banner">
-      "What if Lightroom's sliders married <b>Evoto's AI</b> and had <b>Luminar</b> as a baby? You'd get <b>Collabs Retouch Pro</b>. And it's <b>FREE</b>."
+      "What if Lightcraft's precision sliders married <b>Evoto's AI</b> and had <b>Luminar</b> as a baby? You'd get <b>Collabs Retouch Pro</b>. And it's <b>FREE</b>."
     </div>
 
     <div class="header-actions">
@@ -454,6 +531,10 @@
             <span>🌅 Golden Hour Glow</span>
             <span style="font-size:10px; color:var(--text-muted);">Warmth</span>
           </button>
+          <button class="preset-btn" onclick="retouchEngine.applyPreset('cinematic_mood')">
+            <span>🎬 Cinematic Teal/Orange</span>
+            <span style="font-size:10px; color:var(--text-muted);">Split Tone</span>
+          </button>
           <button class="preset-btn" onclick="retouchEngine.applyPreset('corporate_clean')">
             <span>💼 Corporate Clean</span>
             <span style="font-size:10px; color:var(--text-muted);">Headshot</span>
@@ -471,9 +552,10 @@
           • <b>Dual-Canvas Pipeline</b><br>
           • <b>0% Fake CSS Filters</b><br>
           • <b>100% Real Pixel Impact</b><br>
+          • <b>Lightcraft Planckian Kelvin WB</b><br>
           • <b>Frequency Separation (Low/High)</b><br>
-          • <b>Local Bilateral Inpainting</b><br>
-          • <b>Apple M-Series / Multi-Core WASM</b>
+          • <b>8-Band HSL & 3-Way Split Toning</b><br>
+          • <b>Native Linux, Mac & Windows</b>
         </div>
       </div>
     </div>
@@ -515,10 +597,10 @@
     <!-- RIGHT CONTROLS SIDEBAR -->
     <div class="right-sidebar">
       <div class="tabs-header">
-        <button class="tab-btn active" onclick="switchTab('portrait')">Evoto AI</button>
-        <button class="tab-btn" onclick="switchTab('tone')">Lightroom</button>
-        <button class="tab-btn" onclick="switchTab('color')">HSL & Curves</button>
-        <button class="tab-btn" onclick="switchTab('luminar')">Luminar</button>
+        <button class="tab-btn active" onclick="switchTab('portrait')">Portrait AI</button>
+        <button class="tab-btn" onclick="switchTab('tone')">Light & Color</button>
+        <button class="tab-btn" onclick="switchTab('color')">Mixer & Grade</button>
+        <button class="tab-btn" onclick="switchTab('effects')">Effects & Depth</button>
       </div>
 
       <!-- TAB 1: EVOTO PORTRAIT -->
@@ -531,7 +613,7 @@
 
           <div class="slider-row">
             <div class="slider-labels">
-              <span>Blemish & Acne Removal</span>
+              <span>Blemish & Spot Inpainting</span>
               <span class="slider-val" id="val_blemishRemoval">45</span>
             </div>
             <input type="range" min="0" max="100" value="45" data-param="blemishRemoval">
@@ -555,7 +637,7 @@
 
           <div class="slider-row">
             <div class="slider-labels">
-              <span>High-Freq Micro-Pore Retain</span>
+              <span>High-Freq Micro-Pore Retention</span>
               <span class="slider-val" id="val_freqSepHigh">100</span>
             </div>
             <input type="range" min="0" max="100" value="100" data-param="freqSepHigh">
@@ -570,7 +652,7 @@
 
           <div class="slider-row">
             <div class="slider-labels">
-              <span>Glass Glare Specular Removal</span>
+              <span>Specular Glare Removal</span>
               <span class="slider-val" id="val_glareRemoval">30</span>
             </div>
             <input type="range" min="0" max="100" value="30" data-param="glareRemoval">
@@ -578,7 +660,7 @@
 
           <div class="slider-row">
             <div class="slider-labels">
-              <span>Facial Shine & Hotspot Matte</span>
+              <span>Facial Shine & Oiliness Matte</span>
               <span class="slider-val" id="val_faceShine">20</span>
             </div>
             <input type="range" min="0" max="100" value="20" data-param="faceShine">
@@ -594,7 +676,7 @@
 
           <div class="slider-row">
             <div class="slider-labels">
-              <span>Eye Brighten & Iris Sharpen</span>
+              <span>Eye Catchlight & Sclera Pop</span>
               <span class="slider-val" id="val_eyeBrighten">40</span>
             </div>
             <input type="range" min="0" max="100" value="40" data-param="eyeBrighten">
@@ -602,7 +684,7 @@
 
           <div class="slider-row">
             <div class="slider-labels">
-              <span>Stray Hair Removal</span>
+              <span>Stray Hair & Flyaway Taming</span>
               <span class="slider-val" id="val_strayHair">25</span>
             </div>
             <input type="range" min="0" max="100" value="25" data-param="strayHair">
@@ -610,31 +692,31 @@
         </div>
       </div>
 
-      <!-- TAB 2: LIGHTROOM CORE -->
+      <!-- TAB 2: LIGHTCRAFT LIGHT & COLOR -->
       <div class="tab-content" id="tab_tone" style="display:none;">
         <div class="panel-group">
           <div class="group-header">
             White Balance
-            <span class="group-tag">LIGHTROOM RAW</span>
+            <span class="group-tag">LIGHTCRAFT KELVIN</span>
           </div>
           <div class="slider-row">
-            <div class="slider-labels"><span>Temperature</span><span class="slider-val" id="val_temp">0</span></div>
-            <input type="range" min="-100" max="100" value="0" data-param="temp">
+            <div class="slider-labels"><span>Temperature</span><span class="slider-val" id="val_wbTemp">6500K</span></div>
+            <input type="range" min="2000" max="50000" step="50" value="6500" data-param="wbTemp">
           </div>
           <div class="slider-row">
-            <div class="slider-labels"><span>Tint</span><span class="slider-val" id="val_tint">0</span></div>
-            <input type="range" min="-100" max="100" value="0" data-param="tint">
+            <div class="slider-labels"><span>Tint</span><span class="slider-val" id="val_wbTint">0</span></div>
+            <input type="range" min="-150" max="150" value="0" data-param="wbTint">
           </div>
         </div>
 
         <div class="panel-group">
           <div class="group-header">
             Tone & Dynamic Range
-            <span class="group-tag">LIGHTROOM</span>
+            <span class="group-tag">LIGHTCRAFT EV</span>
           </div>
           <div class="slider-row">
-            <div class="slider-labels"><span>Exposure</span><span class="slider-val" id="val_exposure">0</span></div>
-            <input type="range" min="-100" max="100" value="0" data-param="exposure">
+            <div class="slider-labels"><span>Exposure</span><span class="slider-val" id="val_exposure">0.00 EV</span></div>
+            <input type="range" min="-5" max="5" step="0.05" value="0" data-param="exposure">
           </div>
           <div class="slider-row">
             <div class="slider-labels"><span>Contrast</span><span class="slider-val" id="val_contrast">0</span></div>
@@ -661,14 +743,6 @@
         <div class="panel-group">
           <div class="group-header">Presence & Color</div>
           <div class="slider-row">
-            <div class="slider-labels"><span>Texture</span><span class="slider-val" id="val_texture">0</span></div>
-            <input type="range" min="-100" max="100" value="0" data-param="texture">
-          </div>
-          <div class="slider-row">
-            <div class="slider-labels"><span>Clarity</span><span class="slider-val" id="val_clarity">0</span></div>
-            <input type="range" min="-100" max="100" value="0" data-param="clarity">
-          </div>
-          <div class="slider-row">
             <div class="slider-labels"><span>Vibrance</span><span class="slider-val" id="val_vibrance">10</span></div>
             <input type="range" min="-100" max="100" value="10" data-param="vibrance">
           </div>
@@ -679,67 +753,158 @@
         </div>
       </div>
 
-      <!-- TAB 3: HSL & CURVES -->
+      <!-- TAB 3: HSL MIXER & COLOR GRADING -->
       <div class="tab-content" id="tab_color" style="display:none;">
         <div class="panel-group">
           <div class="group-header">
             Interactive Tone Curve
-            <span class="group-tag">256-LUT</span>
+            <span class="group-tag">256-LUT SPLINE</span>
           </div>
           <canvas id="curveCanvas" width="200" height="200"></canvas>
           <div style="font-size:10px; color:var(--text-muted); text-align:center;">
-            Drag points to sculpt RGB tone curve
+            Drag control points to sculpt RGB tone curve
           </div>
         </div>
 
         <div class="panel-group">
           <div class="group-header">
             8-Channel HSL Mixer
-            <span class="group-tag">TRUE COLOR MATRIX</span>
+            <span class="group-tag" id="hslCurrentBandLabel">Orange Channel</span>
           </div>
 
-          <div style="font-size:11px; font-weight:700; color:#EF4444; margin-bottom:4px;">Red (Lips & Rosy Skin)</div>
-          <div class="slider-row">
-            <div class="slider-labels"><span>Saturation</span><span class="slider-val" id="val_hslRedSat">0</span></div>
-            <input type="range" min="-100" max="100" value="0" data-param="hslRedSat">
+          <div class="hsl-bands-nav">
+            <button class="hsl-band-btn" data-band="red" style="color:#EF4444;">Red</button>
+            <button class="hsl-band-btn active" data-band="orange" style="color:#F97316;">Orange</button>
+            <button class="hsl-band-btn" data-band="yellow" style="color:#EAB308;">Yellow</button>
+            <button class="hsl-band-btn" data-band="green" style="color:#22C55E;">Green</button>
+            <button class="hsl-band-btn" data-band="aqua" style="color:#06B6D4;">Aqua</button>
+            <button class="hsl-band-btn" data-band="blue" style="color:#3B82F6;">Blue</button>
+            <button class="hsl-band-btn" data-band="purple" style="color:#A855F7;">Purple</button>
+            <button class="hsl-band-btn" data-band="magenta" style="color:#EC4899;">Magenta</button>
           </div>
 
-          <div style="font-size:11px; font-weight:700; color:#F97316; margin-bottom:4px;">Orange (Skin Tones)</div>
           <div class="slider-row">
-            <div class="slider-labels"><span>Saturation</span><span class="slider-val" id="val_hslOrangeSat">5</span></div>
-            <input type="range" min="-100" max="100" value="5" data-param="hslOrangeSat">
+            <div class="slider-labels"><span>Hue Shift</span><span class="slider-val" id="val_hslCurrent_Hue">0</span></div>
+            <input type="range" min="-100" max="100" value="0" id="hslCurrent_Hue">
           </div>
           <div class="slider-row">
-            <div class="slider-labels"><span>Luminance</span><span class="slider-val" id="val_hslOrangeLum">0</span></div>
-            <input type="range" min="-100" max="100" value="0" data-param="hslOrangeLum">
+            <div class="slider-labels"><span>Saturation</span><span class="slider-val" id="val_hslCurrent_Sat">+5</span></div>
+            <input type="range" min="-100" max="100" value="5" id="hslCurrent_Sat">
+          </div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Luminance</span><span class="slider-val" id="val_hslCurrent_Lum">0</span></div>
+            <input type="range" min="-100" max="100" value="0" id="hslCurrent_Lum">
+          </div>
+        </div>
+
+        <div class="panel-group">
+          <div class="group-header">
+            3-Way Color Grading
+            <span class="group-tag">LIGHTCRAFT SPLIT TONE</span>
+          </div>
+          <div style="font-size:11px; font-weight:700; color:#38BDF8; margin-bottom:4px;">Shadows Tint</div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Hue (0-360)</span><span class="slider-val" id="val_gradeShadowsHue">0</span></div>
+            <input type="range" min="0" max="360" value="0" data-param="gradeShadowsHue">
+          </div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Saturation</span><span class="slider-val" id="val_gradeShadowsSat">0</span></div>
+            <input type="range" min="0" max="100" value="0" data-param="gradeShadowsSat">
           </div>
 
-          <div style="font-size:11px; font-weight:700; color:#3B82F6; margin-bottom:4px;">Blue (Eyes & Skies)</div>
+          <div style="font-size:11px; font-weight:700; color:#FBBF24; margin-top:8px; margin-bottom:4px;">Highlights Tint</div>
           <div class="slider-row">
-            <div class="slider-labels"><span>Saturation</span><span class="slider-val" id="val_hslBlueSat">0</span></div>
-            <input type="range" min="-100" max="100" value="0" data-param="hslBlueSat">
+            <div class="slider-labels"><span>Hue (0-360)</span><span class="slider-val" id="val_gradeHighlightsHue">0</span></div>
+            <input type="range" min="0" max="360" value="0" data-param="gradeHighlightsHue">
+          </div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Saturation</span><span class="slider-val" id="val_gradeHighlightsSat">0</span></div>
+            <input type="range" min="0" max="100" value="0" data-param="gradeHighlightsSat">
+          </div>
+
+          <div style="font-size:11px; font-weight:700; color:#94A3B8; margin-top:8px; margin-bottom:4px;">Grade Tuning</div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Blending</span><span class="slider-val" id="val_gradeBlending">50</span></div>
+            <input type="range" min="0" max="100" value="50" data-param="gradeBlending">
+          </div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Balance</span><span class="slider-val" id="val_gradeBalance">0</span></div>
+            <input type="range" min="-100" max="100" value="0" data-param="gradeBalance">
           </div>
         </div>
       </div>
 
-      <!-- TAB 4: LUMINAR -->
-      <div class="tab-content" id="tab_luminar" style="display:none;">
+      <!-- TAB 4: EFFECTS & DEPTH -->
+      <div class="tab-content" id="tab_effects" style="display:none;">
         <div class="panel-group">
           <div class="group-header">
-            AI Portrait Bokeh & Depth
-            <span class="group-tag">LUMINAR</span>
+            Presence & Atmosphere
+            <span class="group-tag">LIGHTCRAFT OPTICS</span>
+          </div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Texture</span><span class="slider-val" id="val_texture">0</span></div>
+            <input type="range" min="-100" max="100" value="0" data-param="texture">
+          </div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Clarity</span><span class="slider-val" id="val_clarity">0</span></div>
+            <input type="range" min="-100" max="100" value="0" data-param="clarity">
+          </div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Dehaze</span><span class="slider-val" id="val_dehaze">0</span></div>
+            <input type="range" min="-100" max="100" value="0" data-param="dehaze">
+          </div>
+        </div>
+
+        <div class="panel-group">
+          <div class="group-header">
+            Lightcraft Geometric Vignette
+            <span class="group-tag">VIGNETTE</span>
+          </div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Amount</span><span class="slider-val" id="val_vignetteAmount">0</span></div>
+            <input type="range" min="-100" max="100" value="0" data-param="vignetteAmount">
+          </div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Midpoint</span><span class="slider-val" id="val_vignetteMidpoint">50</span></div>
+            <input type="range" min="0" max="100" value="50" data-param="vignetteMidpoint">
+          </div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Feather</span><span class="slider-val" id="val_vignetteFeather">50</span></div>
+            <input type="range" min="0" max="100" value="50" data-param="vignetteFeather">
+          </div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Roundness</span><span class="slider-val" id="val_vignetteRoundness">0</span></div>
+            <input type="range" min="-100" max="100" value="0" data-param="vignetteRoundness">
+          </div>
+        </div>
+
+        <div class="panel-group">
+          <div class="group-header">
+            Analog Film Grain
+            <span class="group-tag">SILVER HALIDE</span>
+          </div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Amount</span><span class="slider-val" id="val_grainAmount">0</span></div>
+            <input type="range" min="0" max="100" value="0" data-param="grainAmount">
+          </div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Size</span><span class="slider-val" id="val_grainSize">25</span></div>
+            <input type="range" min="0" max="100" value="25" data-param="grainSize">
+          </div>
+        </div>
+
+        <div class="panel-group">
+          <div class="group-header">
+            Sharpness & Bokeh
+            <span class="group-tag">PORTRAIT DEPTH</span>
+          </div>
+          <div class="slider-row">
+            <div class="slider-labels"><span>Sharpening Amount</span><span class="slider-val" id="val_sharpenAmount">15</span></div>
+            <input type="range" min="0" max="150" value="15" data-param="sharpenAmount">
           </div>
           <div class="slider-row">
             <div class="slider-labels"><span>Background Bokeh Blur</span><span class="slider-val" id="val_bgBlur">0</span></div>
             <input type="range" min="0" max="100" value="0" data-param="bgBlur">
-          </div>
-          <div class="slider-row">
-            <div class="slider-labels"><span>Vignette</span><span class="slider-val" id="val_vignette">0</span></div>
-            <input type="range" min="-100" max="100" value="0" data-param="vignette">
-          </div>
-          <div class="slider-row">
-            <div class="slider-labels"><span>Studio Iris Sharpness</span><span class="slider-val" id="val_sharpen">15</span></div>
-            <input type="range" min="0" max="100" value="15" data-param="sharpen">
           </div>
         </div>
       </div>
@@ -752,7 +917,8 @@
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
       event.target.classList.add('active');
-      document.getElementById(`tab_${tabId}`).style.display = 'flex';
+      const target = document.getElementById(`tab_${tabId}`);
+      if (target) target.style.display = 'flex';
     }
 
     function setSplitMode(mode) {

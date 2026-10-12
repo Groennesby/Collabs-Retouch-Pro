@@ -1,4 +1,5 @@
 // Collabs Retouch Pro — High-Performance Dual-Canvas Pixel Worker
+// Fused Lightcraft Pro RAW Develop + Evoto Editorial Portrait Retouch Pipeline
 // 100% Real Pixel Math — Zero CSS Filters — 4K/6K RAW & Portrait Support
 // Created by Dave Groennesby (Collabs Software)
 
@@ -10,7 +11,7 @@ self.onmessage = async function(e) {
     const pixels = new Uint8ClampedArray(buffer);
     const mask = maskBuffer ? new Uint8Array(maskBuffer) : null;
     
-    // Execute real pixel pipeline
+    // Execute real fused pixel pipeline
     processPixels(pixels, width, height, params, mask, isDraft);
     
     const elapsed = Math.round(performance.now() - startTime);
@@ -27,92 +28,119 @@ self.onmessage = async function(e) {
 
 function processPixels(data, w, h, p, mask, isDraft) {
   const len = w * h;
-  const stride = isDraft ? 2 : 1; // Faster draft update for instant 60fps responsiveness
 
-  // 1. Lightroom Core Raw & Tone Controls
-  applyLightroomTone(data, len, p);
+  // 1. Lightcraft Core Tone & Color Temperature (Kelvin + Tint + Exposure + Dynamic Range)
+  applyLightcraftToneAndWB(data, len, p);
 
-  // 2. 8-Band HSL Engine (Real RGB <-> HSL Color Space Transform)
-  if (hasHslEdits(p)) {
+  // 2. Lightcraft 8-Band HSL Color Mixer (Red, Orange, Yellow, Green, Aqua, Blue, Purple, Magenta)
+  if (has8BandHslEdits(p)) {
     apply8BandHsl(data, len, p);
   }
 
-  // 3. Tone Curves (256-entry LUT)
+  // 3. Lightcraft 3-Way Color Grading (Shadows, Midtones, Highlights, Global, Balance, Blending)
+  if (hasColorGrading(p)) {
+    applyColorGrading(data, len, p);
+  }
+
+  // 4. Tone Curves (256-entry LUT)
   if (p.curveLut) {
     applyCurveLut(data, len, p.curveLut);
   }
 
-  // 4. Portrait Skin & Frequency Separation Module
-  if (p.skinSmooth > 0 || p.freqSepLow > 0 || p.freqSepHigh > 0 || p.blemishRemoval > 0) {
+  // 5. Evoto Portrait Skin & Frequency Separation Module
+  if (p.skinSmooth > 0 || p.freqSepLow > 0 || p.freqSepHigh > 0 || p.blemishRemoval > 0 || p.strayHair > 0) {
     applyFrequencySeparationAndSkin(data, w, h, p, mask);
   }
 
-  // 5. Specular Glare & Hotspot Removal
+  // 6. Specular Glare & Face Shine Removal
   if (p.glareRemoval > 0 || p.faceShine > 0) {
     applyGlareRemoval(data, len, p);
   }
 
-  // 6. Eye Brightening, Iris Sharpening & Teeth Whitening
+  // 7. Teeth Whitening & Eye Catchlight / Sclera Brightening
   if (p.eyeBrighten > 0 || p.teethWhiten > 0) {
     applyEyeAndTeethEnhancement(data, w, h, p, mask);
   }
 
-  // 7. Background Bokeh Blur (outside subject mask)
+  // 8. Clarity & Dehaze (Local Contrast & Atmospheric Correction)
+  if (p.clarity !== 0 || p.dehaze !== 0) {
+    applyClarityAndDehaze(data, w, h, p.clarity || 0, p.dehaze || 0);
+  }
+
+  // 9. Background Bokeh Blur (outside subject mask)
   if (p.bgBlur > 0 && mask) {
     applyBackgroundBokeh(data, w, h, p.bgBlur, mask);
   }
 
-  // 8. Texture, Clarity & Sharpening
-  if (p.texture !== 0 || p.sharpen > 0) {
-    applyUnsharpMask(data, w, h, p.texture, p.sharpen);
+  // 10. Texture & Unsharp Mask Sharpening
+  if ((p.texture && p.texture !== 0) || (p.sharpen && p.sharpen > 0) || (p.sharpenAmount && p.sharpenAmount > 0)) {
+    const sAmt = p.sharpenAmount || p.sharpen || 0;
+    const tAmt = p.texture || 0;
+    applyUnsharpMask(data, w, h, tAmt, sAmt);
   }
 
-  // 9. Vignette
-  if (p.vignette !== 0) {
-    applyVignette(data, w, h, p.vignette);
+  // 11. Lightcraft Vignette (Amount, Midpoint, Roundness, Feather)
+  if (p.vignette !== 0 || p.vignetteAmount !== 0) {
+    const vigAmt = p.vignetteAmount !== undefined ? p.vignetteAmount : p.vignette;
+    applyLightcraftVignette(data, w, h, vigAmt, p.vignetteMidpoint || 50, p.vignetteFeather || 50, p.vignetteRoundness || 0);
+  }
+
+  // 12. Lightcraft Procedural Analog Film Grain
+  if (p.grainAmount > 0 || p.grain > 0) {
+    const gAmt = p.grainAmount || p.grain || 0;
+    applyFilmGrain(data, w, h, gAmt, p.grainSize || 25, p.grainRoughness || 50);
   }
 }
 
 // ==========================================
-// LIGHTROOM TONE MATH
+// 1. LIGHTCRAFT TONE & WHITE BALANCE
 // ==========================================
-function applyLightroomTone(data, len, p) {
-  const expMult = Math.pow(2, p.exposure / 50);
-  const contrastFactor = (259 * (p.contrast + 255)) / (255 * (259 - p.contrast));
-  const tempR = p.temp > 0 ? (1 + p.temp * 0.005) : 1;
-  const tempB = p.temp < 0 ? (1 - p.temp * 0.005) : 1;
-  const tintG = 1 - p.tint * 0.003;
-  const highlights = p.highlights / 100;
-  const shadows = p.shadows / 100;
-  const whites = p.whites / 100;
-  const blacks = p.blacks / 100;
-  const satFactor = 1 + (p.saturation / 100);
-  const vibFactor = p.vibrance / 100;
+function applyLightcraftToneAndWB(data, len, p) {
+  // Exposure EV formula: 2^(EV)
+  const ev = (p.exposure !== undefined) ? p.exposure : 0;
+  const expMult = Math.pow(2, ev);
+
+  // Contrast sigmoid
+  const contrastVal = (p.contrast !== undefined) ? p.contrast : 0;
+  const contrastFactor = (259 * (contrastVal + 255)) / (255 * (259 - contrastVal));
+
+  // Lightcraft White Balance: Planckian Kelvin Temp & Tint
+  // Default is 6500K neutral
+  const kelvin = (p.wbTemp !== undefined) ? p.wbTemp : (p.temp !== undefined ? (6500 + p.temp * 40) : 6500);
+  const tint = (p.wbTint !== undefined) ? p.wbTint : (p.tint !== undefined ? p.tint : 0);
+  const { r: wbR, g: wbG, b: wbB } = kelvinToRgbMultipliers(kelvin, tint);
+
+  const highlights = (p.highlights || 0) / 100;
+  const shadows = (p.shadows || 0) / 100;
+  const whites = (p.whites || 0) / 100;
+  const blacks = (p.blacks || 0) / 100;
+  const satFactor = 1 + ((p.saturation || 0) / 100);
+  const vibFactor = (p.vibrance || 0) / 100;
 
   for (let i = 0; i < len * 4; i += 4) {
     let r = data[i];
     let g = data[i + 1];
     let b = data[i + 2];
 
-    // White balance / Temp & Tint
-    r *= tempR;
-    g *= tintG;
-    b *= tempB;
+    // White Balance
+    r *= wbR;
+    g *= wbG;
+    b *= wbB;
 
     // Exposure
     r *= expMult;
     g *= expMult;
     b *= expMult;
 
-    // Highlights & Shadows
+    // Dynamic Range (Highlights, Shadows, Whites, Blacks)
     const lum = 0.299 * r + 0.587 * g + 0.114 * b;
     if (lum > 128) {
       const hWeight = (lum - 128) / 127;
-      const hAdj = 1 + highlights * hWeight * 0.4 + whites * hWeight * 0.3;
+      const hAdj = 1 + highlights * hWeight * 0.45 + whites * hWeight * 0.35;
       r *= hAdj; g *= hAdj; b *= hAdj;
     } else {
       const sWeight = (128 - lum) / 128;
-      const sAdj = 1 + shadows * sWeight * 0.4 + blacks * sWeight * 0.3;
+      const sAdj = 1 + shadows * sWeight * 0.45 + blacks * sWeight * 0.35;
       r *= sAdj; g *= sAdj; b *= sAdj;
     }
 
@@ -140,18 +168,72 @@ function applyLightroomTone(data, len, p) {
   }
 }
 
+function kelvinToRgbMultipliers(kelvin, tint) {
+  // Approximate Blackbody radiation Planckian locus
+  const temp = Math.max(2000, Math.min(50000, kelvin)) / 100;
+  let r, g, b;
+
+  if (temp <= 66) {
+    r = 255;
+    g = 99.4708025861 * Math.log(temp) - 161.1195681661;
+    b = temp <= 19 ? 0 : (138.5177312231 * Math.log(temp - 10) - 305.0447927307);
+  } else {
+    r = 329.698727446 * Math.pow(temp - 60, -0.1332047592);
+    g = 288.1221695283 * Math.pow(temp - 60, -0.0755148492);
+    b = 255;
+  }
+
+  // Reference neutral at D65 (6500K)
+  const d65R = 255, d65G = 254.6, d65B = 255;
+  let multR = (r / d65R);
+  let multG = (g / d65G);
+  let multB = (b / d65B);
+
+  // Tint adjustment: negative = green, positive = magenta
+  if (tint !== 0) {
+    const tintFactor = tint * 0.003;
+    multG *= (1 - tintFactor);
+    multR *= (1 + tintFactor * 0.5);
+    multB *= (1 + tintFactor * 0.5);
+  }
+
+  return { r: multR, g: multG, b: multB };
+}
+
 // ==========================================
-// 8-BAND HSL ENGINE
+// 2. LIGHTCRAFT 8-BAND HSL COLOR MIXER
 // ==========================================
-function hasHslEdits(p) {
+function has8BandHslEdits(p) {
   const bands = ['Red', 'Orange', 'Yellow', 'Green', 'Aqua', 'Blue', 'Purple', 'Magenta'];
   for (const b of bands) {
+    const lower = b.toLowerCase();
     if (p[`hsl${b}Hue`] || p[`hsl${b}Sat`] || p[`hsl${b}Lum`]) return true;
+    if (p.hsl && p.hsl[lower] && (p.hsl[lower].hue || p.hsl[lower].sat || p.hsl[lower].lum)) return true;
   }
   return false;
 }
 
+function getHslParam(p, band, prop) {
+  const capBand = band.charAt(0).toUpperCase() + band.slice(1);
+  const capProp = prop.charAt(0).toUpperCase() + prop.slice(1);
+  const direct = p[`hsl${capBand}${capProp}`];
+  if (direct !== undefined && direct !== 0) return direct;
+  if (p.hsl && p.hsl[band] && p.hsl[band][prop] !== undefined) return p.hsl[band][prop];
+  return 0;
+}
+
 function apply8BandHsl(data, len, p) {
+  const bandsConfig = {
+    red: { hue: getHslParam(p, 'red', 'hue'), sat: getHslParam(p, 'red', 'sat'), lum: getHslParam(p, 'red', 'lum') },
+    orange: { hue: getHslParam(p, 'orange', 'hue'), sat: getHslParam(p, 'orange', 'sat'), lum: getHslParam(p, 'orange', 'lum') },
+    yellow: { hue: getHslParam(p, 'yellow', 'hue'), sat: getHslParam(p, 'yellow', 'sat'), lum: getHslParam(p, 'yellow', 'lum') },
+    green: { hue: getHslParam(p, 'green', 'hue'), sat: getHslParam(p, 'green', 'sat'), lum: getHslParam(p, 'green', 'lum') },
+    aqua: { hue: getHslParam(p, 'aqua', 'hue'), sat: getHslParam(p, 'aqua', 'sat'), lum: getHslParam(p, 'aqua', 'lum') },
+    blue: { hue: getHslParam(p, 'blue', 'hue'), sat: getHslParam(p, 'blue', 'sat'), lum: getHslParam(p, 'blue', 'lum') },
+    purple: { hue: getHslParam(p, 'purple', 'hue'), sat: getHslParam(p, 'purple', 'sat'), lum: getHslParam(p, 'purple', 'lum') },
+    magenta: { hue: getHslParam(p, 'magenta', 'hue'), sat: getHslParam(p, 'magenta', 'sat'), lum: getHslParam(p, 'magenta', 'lum') }
+  };
+
   for (let i = 0; i < len * 4; i += 4) {
     let r = data[i] / 255;
     let g = data[i + 1] / 255;
@@ -176,36 +258,34 @@ function apply8BandHsl(data, len, p) {
     }
 
     const deg = h * 360;
-    let dHue = 0, dSat = 0, dLum = 0;
+    let band = null;
 
-    // Determine HSL band
     if (deg >= 345 || deg < 15) {
-      dHue = p.hslRedHue; dSat = p.hslRedSat; dLum = p.hslRedLum;
+      band = bandsConfig.red;
     } else if (deg >= 15 && deg < 45) {
-      dHue = p.hslOrangeHue; dSat = p.hslOrangeSat; dLum = p.hslOrangeLum;
+      band = bandsConfig.orange;
     } else if (deg >= 45 && deg < 75) {
-      dHue = p.hslYellowHue; dSat = p.hslYellowSat; dLum = p.hslYellowLum;
+      band = bandsConfig.yellow;
     } else if (deg >= 75 && deg < 165) {
-      dHue = p.hslGreenHue; dSat = p.hslGreenSat; dLum = p.hslGreenLum;
+      band = bandsConfig.green;
     } else if (deg >= 165 && deg < 195) {
-      dHue = p.hslAquaHue; dSat = p.hslAquaSat; dLum = p.hslAquaLum;
+      band = bandsConfig.aqua;
     } else if (deg >= 195 && deg < 255) {
-      dHue = p.hslBlueHue; dSat = p.hslBlueSat; dLum = p.hslBlueLum;
+      band = bandsConfig.blue;
     } else if (deg >= 255 && deg < 285) {
-      dHue = p.hslPurpleHue; dSat = p.hslPurpleSat; dLum = p.hslPurpleLum;
+      band = bandsConfig.purple;
     } else if (deg >= 285 && deg < 345) {
-      dHue = p.hslMagentaHue; dSat = p.hslMagentaSat; dLum = p.hslMagentaLum;
+      band = bandsConfig.magenta;
     }
 
-    if (dHue || dSat || dLum) {
-      h = (deg + (dHue || 0) * 0.5) % 360;
+    if (band && (band.hue !== 0 || band.sat !== 0 || band.lum !== 0)) {
+      h = (deg + band.hue * 0.5) % 360;
       if (h < 0) h += 360;
       h /= 360;
 
-      s = Math.max(0, Math.min(1, s * (1 + (dSat || 0) * 0.01)));
-      l = Math.max(0, Math.min(1, l * (1 + (dLum || 0) * 0.01)));
+      s = Math.max(0, Math.min(1, s * (1 + band.sat * 0.01)));
+      l = Math.max(0, Math.min(1, l * (1 + band.lum * 0.01)));
 
-      // HSL to RGB
       if (s === 0) {
         r = g = b = l;
       } else {
@@ -216,9 +296,9 @@ function apply8BandHsl(data, len, p) {
         b = hue2rgb(pVal, q, h - 1/3);
       }
 
-      data[i] = Math.round(r * 255);
-      data[i + 1] = Math.round(g * 255);
-      data[i + 2] = Math.round(b * 255);
+      data[i] = clamp(r * 255);
+      data[i + 1] = clamp(g * 255);
+      data[i + 2] = clamp(b * 255);
     }
   }
 }
@@ -233,7 +313,84 @@ function hue2rgb(p, q, t) {
 }
 
 // ==========================================
-// TONE CURVE LUT
+// 3. LIGHTCRAFT 3-WAY COLOR GRADING
+// ==========================================
+function hasColorGrading(p) {
+  return (p.gradeShadowsSat > 0 || p.gradeMidtonesSat > 0 || p.gradeHighlightsSat > 0 || p.gradeGlobalSat > 0);
+}
+
+function hslToRgbNorm(h, s, l) {
+  const hNorm = h / 360;
+  const sNorm = s / 100;
+  const lNorm = l / 100;
+  if (sNorm === 0) return [lNorm, lNorm, lNorm];
+  const q = lNorm < 0.5 ? lNorm * (1 + sNorm) : lNorm + sNorm - lNorm * sNorm;
+  const p = 2 * lNorm - q;
+  return [
+    hue2rgb(p, q, hNorm + 1/3),
+    hue2rgb(p, q, hNorm),
+    hue2rgb(p, q, hNorm - 1/3)
+  ];
+}
+
+function applyColorGrading(data, len, p) {
+  const balance = (p.gradeBalance || 0) / 100; // -1 to +1
+  const blend = (p.gradeBlending || 50) / 100;  // 0 to 1
+
+  const sHue = p.gradeShadowsHue || 0, sSat = p.gradeShadowsSat || 0, sLum = p.gradeShadowsLum || 0;
+  const mHue = p.gradeMidtonesHue || 0, mSat = p.gradeMidtonesSat || 0, mLum = p.gradeMidtonesLum || 0;
+  const hHue = p.gradeHighlightsHue || 0, hSat = p.gradeHighlightsSat || 0, hLum = p.gradeHighlightsLum || 0;
+  const gHue = p.gradeGlobalHue || 0, gSat = p.gradeGlobalSat || 0;
+
+  const sColor = hslToRgbNorm(sHue, sSat, 50);
+  const mColor = hslToRgbNorm(mHue, mSat, 50);
+  const hColor = hslToRgbNorm(hHue, hSat, 50);
+  const gColor = hslToRgbNorm(gHue, gSat, 50);
+
+  for (let i = 0; i < len * 4; i += 4) {
+    let r = data[i] / 255;
+    let g = data[i + 1] / 255;
+    let b = data[i + 2] / 255;
+
+    const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+    const adjustedLuma = Math.max(0, Math.min(1, luma - balance * 0.3));
+
+    // Weights for Shadows, Midtones, Highlights
+    const sWeight = Math.pow(1 - adjustedLuma, 2) * (sSat / 100);
+    const hWeight = Math.pow(adjustedLuma, 2) * (hSat / 100);
+    const mWeight = (1 - Math.abs(adjustedLuma - 0.5) * 2) * (mSat / 100);
+    const gWeight = (gSat / 100) * 0.5;
+
+    // Apply color tint offsets
+    if (sWeight > 0) {
+      r += (sColor[0] - 0.5) * sWeight * blend;
+      g += (sColor[1] - 0.5) * sWeight * blend;
+      b += (sColor[2] - 0.5) * sWeight * blend;
+    }
+    if (mWeight > 0) {
+      r += (mColor[0] - 0.5) * mWeight * blend;
+      g += (mColor[1] - 0.5) * mWeight * blend;
+      b += (mColor[2] - 0.5) * mWeight * blend;
+    }
+    if (hWeight > 0) {
+      r += (hColor[0] - 0.5) * hWeight * blend;
+      g += (hColor[1] - 0.5) * hWeight * blend;
+      b += (hColor[2] - 0.5) * hWeight * blend;
+    }
+    if (gWeight > 0) {
+      r += (gColor[0] - 0.5) * gWeight;
+      g += (gColor[1] - 0.5) * gWeight;
+      b += (gColor[2] - 0.5) * gWeight;
+    }
+
+    data[i] = clamp(r * 255);
+    data[i + 1] = clamp(g * 255);
+    data[i + 2] = clamp(b * 255);
+  }
+}
+
+// ==========================================
+// 4. TONE CURVE LUT
 // ==========================================
 function applyCurveLut(data, len, lut) {
   for (let i = 0; i < len * 4; i += 4) {
@@ -244,29 +401,22 @@ function applyCurveLut(data, len, lut) {
 }
 
 // ==========================================
-// EVOTO FREQUENCY SEPARATION & SKIN SMOOTHING
+// 5. EVOTO FREQUENCY SEPARATION & SKIN SMOOTHING
 // ==========================================
 function applyFrequencySeparationAndSkin(data, w, h, p, mask) {
-  // Real Frequency Separation:
-  // Low Frequency = Bilateral/Gaussian smoothed color base
-  // High Frequency = Original - Low Frequency + 128 (Pores & Fine Skin Micro-texture)
   const len = w * h;
-  const radius = Math.max(2, Math.min(12, Math.round(p.skinSmooth * 0.1)));
+  const radius = Math.max(2, Math.min(14, Math.round((p.skinSmooth || 50) * 0.12)));
   const smoothStrength = (p.skinSmooth || 40) / 100;
   const blemishThreshold = (p.blemishRemoval || 0);
+  const strayHairRemoval = (p.strayHair || 0) / 100;
 
-  // Copy original for high-frequency extraction
   const orig = new Uint8ClampedArray(data);
-
-  // Fast Separable Box/Bilateral approximation for low frequency
   const low = new Uint8ClampedArray(len * 4);
   fastBilateralApproximation(orig, low, w, h, radius, 30);
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const idx = (y * w + x) * 4;
-      
-      // Determine if skin (via mask or heuristic skin chromaticity)
       const isSkin = mask ? mask[y * w + x] > 50 : isSkinColor(orig[idx], orig[idx + 1], orig[idx + 2]);
       if (!isSkin) continue;
 
@@ -278,16 +428,27 @@ function applyFrequencySeparationAndSkin(data, w, h, p, mask) {
       let gL = low[idx + 1];
       let bL = low[idx + 2];
 
-      // Blemish Removal: Adaptive median filter detects localized dark blemishes on skin
+      // Blemish Removal: Adaptive median filter detects localized spots
       if (blemishThreshold > 0) {
         const lumOrig = 0.299 * rO + 0.587 * gO + 0.114 * bO;
         const lumLow = 0.299 * rL + 0.587 * gL + 0.114 * bL;
-        if (lumOrig < lumLow - (25 - blemishThreshold * 0.2)) {
-          // Dark spot detected on skin: inpaint with surrounding low frequency color
-          const blend = Math.min(1, blemishThreshold * 0.015);
+        if (lumOrig < lumLow - (26 - blemishThreshold * 0.22)) {
+          const blend = Math.min(1, blemishThreshold * 0.018);
           rO = rO * (1 - blend) + rL * blend;
           gO = gO * (1 - blend) + gL * blend;
           bO = bO * (1 - blend) + bL * blend;
+        }
+      }
+
+      // Stray Hair Taming: Fine linear high-contrast strands blended out
+      if (strayHairRemoval > 0) {
+        const lumOrig = 0.299 * rO + 0.587 * gO + 0.114 * bO;
+        const lumLow = 0.299 * rL + 0.587 * gL + 0.114 * bL;
+        if (Math.abs(lumOrig - lumLow) > 35) {
+          const hairBlend = strayHairRemoval * 0.6;
+          rO = rO * (1 - hairBlend) + rL * hairBlend;
+          gO = gO * (1 - hairBlend) + gL * hairBlend;
+          bO = bO * (1 - hairBlend) + bL * hairBlend;
         }
       }
 
@@ -302,7 +463,7 @@ function applyFrequencySeparationAndSkin(data, w, h, p, mask) {
       const bSmoothLow = bO * (1 - smoothStrength) + bL * smoothStrength;
 
       // Recombine: Low + High - 128
-      const texturePreserve = (p.freqSepHigh || 100) / 100;
+      const texturePreserve = (p.freqSepHigh !== undefined ? p.freqSepHigh : 100) / 100;
       data[idx] = clamp(rSmoothLow + (rHigh - 128) * texturePreserve);
       data[idx + 1] = clamp(gSmoothLow + (gHigh - 128) * texturePreserve);
       data[idx + 2] = clamp(bSmoothLow + (bHigh - 128) * texturePreserve);
@@ -311,12 +472,10 @@ function applyFrequencySeparationAndSkin(data, w, h, p, mask) {
 }
 
 function isSkinColor(r, g, b) {
-  // Standard dermatological skin chrominance model
   return (r > 60 && g > 40 && b > 20 && r > g && g > b && (r - g) >= 10);
 }
 
 function fastBilateralApproximation(src, dst, w, h, radius, sigmaRange) {
-  // Fast 2-pass edge-aware filter
   const temp = new Float32Array(w * h * 3);
 
   // Horizontal pass
@@ -378,20 +537,19 @@ function fastBilateralApproximation(src, dst, w, h, radius, sigmaRange) {
 }
 
 // ==========================================
-// GLARE & SPECULAR HOTSPOT REMOVAL
+// 6. SPECULAR GLARE & FACE SHINE REMOVAL
 // ==========================================
 function applyGlareRemoval(data, len, p) {
   const strength = (p.glareRemoval || p.faceShine || 0) / 100;
   for (let i = 0; i < len * 4; i += 4) {
     const r = data[i], g = data[i + 1], b = data[i + 2];
     const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-    // Specular highlight: very bright with lower saturation
-    if (lum > 220) {
+    if (lum > 215) {
       const maxC = Math.max(r, g, b);
       const minC = Math.min(r, g, b);
       const sat = maxC === 0 ? 0 : (maxC - minC) / maxC;
-      if (sat < 0.25) {
-        const diff = (lum - 220) * strength * 0.7;
+      if (sat < 0.28) {
+        const diff = (lum - 215) * strength * 0.75;
         data[i] = clamp(r - diff);
         data[i + 1] = clamp(g - diff);
         data[i + 2] = clamp(b - diff);
@@ -401,7 +559,7 @@ function applyGlareRemoval(data, len, p) {
 }
 
 // ==========================================
-// TEETH WHITEN & EYE BRIGHTEN
+// 7. TEETH WHITEN & EYE BRIGHTEN
 // ==========================================
 function applyEyeAndTeethEnhancement(data, w, h, p, mask) {
   const teethStr = (p.teethWhiten || 0) / 100;
@@ -412,25 +570,68 @@ function applyEyeAndTeethEnhancement(data, w, h, p, mask) {
     const lum = 0.299 * r + 0.587 * g + 0.114 * b;
 
     // Teeth: slightly yellowish whites in mid-to-high luminance
-    if (teethStr > 0 && lum > 140 && lum < 240 && r > b && (r - b) < 50) {
-      // Whiten: desaturate yellowish tint and lift luminance slightly
+    if (teethStr > 0 && lum > 135 && lum < 240 && r > b && (r - b) < 55) {
       const avg = (r + g + b) / 3;
-      data[i] = clamp(r * (1 - teethStr * 0.5) + avg * (teethStr * 0.5) + teethStr * 8);
-      data[i + 1] = clamp(g * (1 - teethStr * 0.5) + avg * (teethStr * 0.5) + teethStr * 8);
-      data[i + 2] = clamp(b * (1 - teethStr * 0.3) + avg * (teethStr * 0.3) + teethStr * 12);
+      data[i] = clamp(r * (1 - teethStr * 0.55) + avg * (teethStr * 0.55) + teethStr * 10);
+      data[i + 1] = clamp(g * (1 - teethStr * 0.55) + avg * (teethStr * 0.55) + teethStr * 10);
+      data[i + 2] = clamp(b * (1 - teethStr * 0.3) + avg * (teethStr * 0.3) + teethStr * 14);
     }
 
     // Eyes: catchlights & sclera enhancement
-    if (eyeStr > 0 && lum > 200) {
-      data[i] = clamp(r * (1 + eyeStr * 0.15));
-      data[i + 1] = clamp(g * (1 + eyeStr * 0.15));
-      data[i + 2] = clamp(b * (1 + eyeStr * 0.2));
+    if (eyeStr > 0 && lum > 195) {
+      data[i] = clamp(r * (1 + eyeStr * 0.16));
+      data[i + 1] = clamp(g * (1 + eyeStr * 0.16));
+      data[i + 2] = clamp(b * (1 + eyeStr * 0.22));
     }
   }
 }
 
 // ==========================================
-// BACKGROUND BOKEH BLUR
+// 8. CLARITY & DEHAZE (LOCAL CONTRAST)
+// ==========================================
+function applyClarityAndDehaze(data, w, h, clarity, dehaze) {
+  const clarityAmt = clarity / 100;
+  const dehazeAmt = dehaze / 100;
+  if (clarityAmt === 0 && dehazeAmt === 0) return;
+
+  const copy = new Uint8ClampedArray(data);
+  const step = 4;
+
+  for (let y = step; y < h - step; y += 2) {
+    for (let x = step; x < w - step; x += 2) {
+      const idx = (y * w + x) * 4;
+      const r = copy[idx], g = copy[idx + 1], b = copy[idx + 2];
+      const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+      // Sample surrounding box for local average
+      const s1 = ((y - step) * w + x) * 4;
+      const s2 = ((y + step) * w + x) * 4;
+      const s3 = (y * w + (x - step)) * 4;
+      const s4 = (y * w + (x + step)) * 4;
+      const avgLum = (
+        (0.299 * copy[s1] + 0.587 * copy[s1 + 1] + 0.114 * copy[s1 + 2]) +
+        (0.299 * copy[s2] + 0.587 * copy[s2 + 1] + 0.114 * copy[s2 + 2]) +
+        (0.299 * copy[s3] + 0.587 * copy[s3 + 1] + 0.114 * copy[s3 + 2]) +
+        (0.299 * copy[s4] + 0.587 * copy[s4 + 1] + 0.114 * copy[s4 + 2])
+      ) / 4;
+
+      let delta = (lum - avgLum) * clarityAmt * 0.4;
+      
+      // Dehaze removes atmospheric haze / lifts darks and boosts color purity
+      if (dehazeAmt !== 0) {
+        const hazeDiff = (128 - lum) * dehazeAmt * 0.25;
+        delta += hazeDiff;
+      }
+
+      data[idx] = clamp(r + delta);
+      data[idx + 1] = clamp(g + delta);
+      data[idx + 2] = clamp(b + delta);
+    }
+  }
+}
+
+// ==========================================
+// 9. BACKGROUND BOKEH BLUR
 // ==========================================
 function applyBackgroundBokeh(data, w, h, blurRadius, mask) {
   const r = Math.min(25, Math.round(blurRadius * 0.25));
@@ -440,7 +641,6 @@ function applyBackgroundBokeh(data, w, h, blurRadius, mask) {
   for (let y = 0; y < h; y += 2) {
     for (let x = 0; x < w; x += 2) {
       const idx = (y * w + x) * 4;
-      // If outside subject mask:
       if (mask[y * w + x] < 40) {
         let rSum = 0, gSum = 0, bSum = 0, count = 0;
         for (let dy = -r; dy <= r; dy += 2) {
@@ -463,17 +663,16 @@ function applyBackgroundBokeh(data, w, h, blurRadius, mask) {
 }
 
 // ==========================================
-// UNSHARP MASK (TEXTURE & SHARPNESS)
+// 10. TEXTURE & UNSHARP MASK SHARPENING
 // ==========================================
 function applyUnsharpMask(data, w, h, texture, sharpen) {
-  const amount = (texture * 0.005) + (sharpen * 0.008);
+  const amount = (texture * 0.006) + (sharpen * 0.009);
   if (amount === 0) return;
 
   const copy = new Uint8ClampedArray(data);
   for (let y = 1; y < h - 1; y++) {
     for (let x = 1; x < w - 1; x++) {
       const idx = (y * w + x) * 4;
-      // Simple 3x3 Laplacian edge detect
       const up = ((y - 1) * w + x) * 4;
       const down = ((y + 1) * w + x) * 4;
       const left = (y * w + (x - 1)) * 4;
@@ -489,23 +688,66 @@ function applyUnsharpMask(data, w, h, texture, sharpen) {
 }
 
 // ==========================================
-// VIGNETTE
+// 11. LIGHTCRAFT CALIBRATED VIGNETTE
 // ==========================================
-function applyVignette(data, w, h, vig) {
-  const strength = vig / 100;
+function applyLightcraftVignette(data, w, h, amount, midpoint, feather, roundness) {
+  const str = amount / 100;
+  if (str === 0) return;
+
   const cx = w / 2;
   const cy = h / 2;
-  const maxDist = Math.sqrt(cx * cx + cy * cy);
+  const aspect = roundness !== 0 ? (1 + (roundness / 100) * 0.5) : 1;
+  const midNorm = Math.max(0.05, (midpoint || 50) / 100);
+  const featherNorm = Math.max(0.1, (feather || 50) / 100);
+  const maxRadius = Math.sqrt(cx * cx + cy * cy) * midNorm;
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const idx = (y * w + x) * 4;
-      const dist = Math.sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy)) / maxDist;
-      const factor = 1 - strength * Math.pow(dist, 2);
+      const dx = (x - cx);
+      const dy = (y - cy) * aspect;
+      const dist = Math.sqrt(dx * dx + dy * dy);
 
-      data[idx] = clamp(data[idx] * factor);
-      data[idx + 1] = clamp(data[idx + 1] * factor);
-      data[idx + 2] = clamp(data[idx + 2] * factor);
+      if (dist > maxRadius * (1 - featherNorm * 0.5)) {
+        const t = Math.min(1, (dist - maxRadius * (1 - featherNorm * 0.5)) / (maxRadius * featherNorm + 1));
+        const factor = 1 - str * (t * t);
+
+        data[idx] = clamp(data[idx] * factor);
+        data[idx + 1] = clamp(data[idx + 1] * factor);
+        data[idx + 2] = clamp(data[idx + 2] * factor);
+      }
+    }
+  }
+}
+
+// ==========================================
+// 12. LIGHTCRAFT ANALOG FILM GRAIN
+// ==========================================
+function applyFilmGrain(data, w, h, amount, size, roughness) {
+  const str = (amount / 100) * 45;
+  if (str <= 0) return;
+
+  const grainScale = Math.max(1, Math.round(size / 25));
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = (y * w + x) * 4;
+      const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+      const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+      // Realistic analog grain intensity curve (peaks in midtones, less in pure highlights/blacks)
+      const grainCurve = 4.0 * lum * (1.0 - lum);
+
+      // Fast pseudo-random hash generator
+      const gx = Math.floor(x / grainScale);
+      const gy = Math.floor(y / grainScale);
+      const hash = ((Math.sin(gx * 12.9898 + gy * 78.233) * 43758.5453) % 1) - 0.5;
+
+      const delta = hash * str * grainCurve;
+
+      data[idx] = clamp(r + delta);
+      data[idx + 1] = clamp(g + delta);
+      data[idx + 2] = clamp(b + delta);
     }
   }
 }

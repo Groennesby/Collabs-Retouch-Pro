@@ -1,5 +1,6 @@
 // Collabs Retouch Pro — Core Studio Engine
-// Dual-Canvas Architecture, Web Worker Pipeline, 0% Fake CSS Filters, 100% Real Pixel Impact
+// Fused Lightcraft RAW Pro Develop + Evoto Editorial Portrait Retouch Pipeline
+// Dual-Canvas Architecture, Web Worker Pipeline, 0% Fake CSS Filters, 100% Real Pixel Math
 // Created by Dave Groennesby (Collabs Software)
 
 class RetouchEngine {
@@ -28,10 +29,13 @@ class RetouchEngine {
     // Split View (Before / After)
     this.splitPos = 0.5; // 0.0 to 1.0 (50% default)
     this.isDraggingSplit = false;
-    this.splitMode = 'split'; // 'split', 'after', 'before', 'sideBySide'
+    this.splitMode = 'split'; // 'split', 'after', 'before'
 
-    // Evoto & Lightroom Parameter State
+    // Parameter State
     this.params = this.getDefaultParams();
+
+    // HSL Active Band Selection ('red', 'orange', 'yellow', 'green', 'aqua', 'blue', 'purple', 'magenta')
+    this.activeHslBand = 'orange';
 
     // Web Worker
     this.worker = new Worker('worker.js');
@@ -52,6 +56,7 @@ class RetouchEngine {
     // Setup Event Listeners
     this.setupViewportEvents();
     this.setupSliderEvents();
+    this.setupHslTabs();
     this.setupCurveEvents();
     this.setupDropZone();
 
@@ -62,7 +67,7 @@ class RetouchEngine {
 
   getDefaultParams() {
     return {
-      // Evoto Portrait AI
+      // 1. Evoto Portrait AI
       blemishRemoval: 45,
       skinSmooth: 50,
       freqSepLow: 50,
@@ -74,26 +79,33 @@ class RetouchEngine {
       strayHair: 25,
       faceSculpt: 0,
       
-      // Lightroom RAW Tone
-      temp: 0,
-      tint: 0,
-      exposure: 0,
-      contrast: 0,
-      highlights: 0,
-      shadows: 0,
-      whites: 0,
-      blacks: 0,
+      // 2. Lightcraft Light & Tone
+      wbTemp: 6500, // Kelvin 2000K to 50000K
+      wbTint: 0,    // -150 to +150
+      exposure: 0,  // -5.00 to +5.00 EV
+      contrast: 0,  // -100 to +100
+      highlights: 0,// -100 to +100
+      shadows: 0,   // -100 to +100
+      whites: 0,    // -100 to +100
+      blacks: 0,    // -100 to +100
+      vibrance: 10, // -100 to +100
+      saturation: 0,// -100 to +100
+
+      // 3. Effects, Optics & Background
       texture: 0,
       clarity: 0,
-      vibrance: 10,
-      saturation: 0,
-
-      // Luminar AI & Background
+      dehaze: 0,
+      vignetteAmount: 0,
+      vignetteMidpoint: 50,
+      vignetteFeather: 50,
+      vignetteRoundness: 0,
+      grainAmount: 0,
+      grainSize: 25,
+      grainRoughness: 50,
+      sharpenAmount: 15,
       bgBlur: 0,
-      vignette: 0,
-      sharpen: 15,
 
-      // 8-Band HSL
+      // 4. Lightcraft 8-Band HSL Mixer
       hslRedHue: 0, hslRedSat: 0, hslRedLum: 0,
       hslOrangeHue: 0, hslOrangeSat: 5, hslOrangeLum: 0,
       hslYellowHue: 0, hslYellowSat: 0, hslYellowLum: 0,
@@ -101,7 +113,14 @@ class RetouchEngine {
       hslAquaHue: 0, hslAquaSat: 0, hslAquaLum: 0,
       hslBlueHue: 0, hslBlueSat: 0, hslBlueLum: 0,
       hslPurpleHue: 0, hslPurpleSat: 0, hslPurpleLum: 0,
-      hslMagentaHue: 0, hslMagentaSat: 0, hslMagentaLum: 0
+      hslMagentaHue: 0, hslMagentaSat: 0, hslMagentaLum: 0,
+
+      // 5. Lightcraft 3-Way Color Grading
+      gradeShadowsHue: 0, gradeShadowsSat: 0, gradeShadowsLum: 0,
+      gradeMidtonesHue: 0, gradeMidtonesSat: 0, gradeMidtonesLum: 0,
+      gradeHighlightsHue: 0, gradeHighlightsSat: 0, gradeHighlightsLum: 0,
+      gradeGlobalHue: 0, gradeGlobalSat: 0,
+      gradeBlending: 50, gradeBalance: 0
     };
   }
 
@@ -118,7 +137,8 @@ class RetouchEngine {
           this.retouchedImageData = new ImageData(processed, this.origImageData.width, this.origImageData.height);
         }
         
-        document.getElementById('renderTime').textContent = `${elapsed} ms`;
+        const renderTimeEl = document.getElementById('renderTime');
+        if (renderTimeEl) renderTimeEl.textContent = `${elapsed} ms`;
         this.workerPending = false;
         this.render();
 
@@ -166,7 +186,7 @@ class RetouchEngine {
     this.origImageData = octx.getImageData(0, 0, w, h);
     this.retouchedImageData = new ImageData(new Uint8ClampedArray(this.origImageData.data), w, h);
 
-    // Create draft preview (max 1600px wide for instantaneous slider response)
+    // Create draft preview for instantaneous slider response
     const maxDraftDim = 1600;
     this.draftScale = Math.min(1, maxDraftDim / Math.max(w, h));
     const dw = Math.round(w * this.draftScale);
@@ -179,8 +199,10 @@ class RetouchEngine {
     this.draftRetouchedImageData = new ImageData(new Uint8ClampedArray(this.draftOrigImageData.data), dw, dh);
 
     // Update metadata badge
-    document.getElementById('imageResolution').textContent = `${w} × ${h} px (True RAW 1:1)`;
-    document.getElementById('creditRemaining').textContent = '9,000 Exports Remaining';
+    const resEl = document.getElementById('imageResolution');
+    if (resEl) resEl.textContent = `${w} × ${h} px (True RAW 1:1)`;
+    const credEl = document.getElementById('creditRemaining');
+    if (credEl) credEl.textContent = '9,000 Exports Remaining';
 
     this.fitToScreen();
     this.dispatchProcessing(false);
@@ -197,7 +219,8 @@ class RetouchEngine {
     this.zoom = scale;
     this.panX = (cw - iw * scale) / 2;
     this.panY = (ch - ih * scale) / 2;
-    document.getElementById('zoomValue').textContent = `${Math.round(this.zoom * 100)}%`;
+    const zoomEl = document.getElementById('zoomValue');
+    if (zoomEl) zoomEl.textContent = `${Math.round(this.zoom * 100)}%`;
     this.render();
   }
 
@@ -208,7 +231,8 @@ class RetouchEngine {
     this.zoom = 1.0;
     this.panX = (cw - this.origImageData.width) / 2;
     this.panY = (ch - this.origImageData.height) / 2;
-    document.getElementById('zoomValue').textContent = '100% (1:1 Pixel)';
+    const zoomEl = document.getElementById('zoomValue');
+    if (zoomEl) zoomEl.textContent = '100% (1:1 Pixel)';
     this.render();
   }
 
@@ -242,7 +266,6 @@ class RetouchEngine {
     const ch = this.displayCanvas.clientHeight;
     this.ctx.clearRect(0, 0, cw, ch);
 
-    // Dark grid background
     this.ctx.fillStyle = '#0E0E10';
     this.ctx.fillRect(0, 0, cw, ch);
 
@@ -251,10 +274,8 @@ class RetouchEngine {
     const renderW = iw * this.zoom;
     const renderH = ih * this.zoom;
 
-    // Use full-res or draft depending on availability
     const imgDataToShow = this.retouchedImageData || this.origImageData;
     
-    // Create temporary offscreen canvas for rendering zoom/pan
     const tempCanvas = new OffscreenCanvas(iw, ih);
     const tempCtx = tempCanvas.getContext('2d');
     tempCtx.putImageData(imgDataToShow, 0, 0);
@@ -356,7 +377,6 @@ class RetouchEngine {
         this.render();
       }
 
-      // Pixel Inspector / Color Picker Loupe
       this.inspectPixel(mouseX, mouseY);
     });
 
@@ -379,7 +399,8 @@ class RetouchEngine {
       this.panY = mouseY - (mouseY - this.panY) * (newZoom / this.zoom);
       this.zoom = newZoom;
 
-      document.getElementById('zoomValue').textContent = `${Math.round(this.zoom * 100)}%`;
+      const zoomEl = document.getElementById('zoomValue');
+      if (zoomEl) zoomEl.textContent = `${Math.round(this.zoom * 100)}%`;
       this.render();
     }, { passive: false });
   }
@@ -422,7 +443,15 @@ class RetouchEngine {
       slider.addEventListener('input', (e) => {
         const val = parseFloat(e.target.value);
         this.params[param] = val;
-        if (valDisplay) valDisplay.textContent = val > 0 && slider.min < 0 ? `+${val}` : val;
+        if (valDisplay) {
+          if (param === 'wbTemp') {
+            valDisplay.textContent = `${val}K`;
+          } else if (param === 'exposure') {
+            valDisplay.textContent = val > 0 ? `+${val.toFixed(2)} EV` : `${val.toFixed(2)} EV`;
+          } else {
+            valDisplay.textContent = (val > 0 && slider.min < 0) ? `+${val}` : val;
+          }
+        }
 
         // Immediate draft update for 60fps interaction
         this.dispatchProcessing(true);
@@ -433,6 +462,52 @@ class RetouchEngine {
         this.dispatchProcessing(false);
       });
     });
+  }
+
+  setupHslTabs() {
+    const bandButtons = document.querySelectorAll('.hsl-band-btn');
+    bandButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        bandButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const band = btn.getAttribute('data-band');
+        this.selectHslBand(band);
+      });
+    });
+
+    // Setup active band sliders
+    ['Hue', 'Sat', 'Lum'].forEach(prop => {
+      const slider = document.getElementById(`hslCurrent_${prop}`);
+      if (slider) {
+        slider.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          const capBand = this.activeHslBand.charAt(0).toUpperCase() + this.activeHslBand.slice(1);
+          const paramName = `hsl${capBand}${prop}`;
+          this.params[paramName] = val;
+          const valDisp = document.getElementById(`val_hslCurrent_${prop}`);
+          if (valDisp) valDisp.textContent = val > 0 ? `+${val}` : val;
+          this.dispatchProcessing(true);
+        });
+        slider.addEventListener('change', () => this.dispatchProcessing(false));
+      }
+    });
+  }
+
+  selectHslBand(band) {
+    this.activeHslBand = band;
+    const capBand = band.charAt(0).toUpperCase() + band.slice(1);
+
+    ['Hue', 'Sat', 'Lum'].forEach(prop => {
+      const paramName = `hsl${capBand}${prop}`;
+      const val = this.params[paramName] || 0;
+      const slider = document.getElementById(`hslCurrent_${prop}`);
+      const valDisp = document.getElementById(`val_hslCurrent_${prop}`);
+      if (slider) slider.value = val;
+      if (valDisp) valDisp.textContent = val > 0 ? `+${val}` : val;
+    });
+
+    const bandLabel = document.getElementById('hslCurrentBandLabel');
+    if (bandLabel) bandLabel.textContent = `${capBand} Channel`;
   }
 
   setupCurveEvents() {
@@ -452,6 +527,10 @@ class RetouchEngine {
         cctx.beginPath(); cctx.moveTo(i, 0); cctx.lineTo(i, 200); cctx.stroke();
         cctx.beginPath(); cctx.moveTo(0, i); cctx.lineTo(200, i); cctx.stroke();
       }
+
+      // Diagonal reference
+      cctx.strokeStyle = '#33333D';
+      cctx.beginPath(); cctx.moveTo(0, 200); cctx.lineTo(200, 0); cctx.stroke();
 
       // Curve line
       cctx.strokeStyle = '#FFE606';
@@ -485,14 +564,12 @@ class RetouchEngine {
       const mx = ((e.clientX - rect.left) / 200) * 255;
       const my = 255 - ((e.clientY - rect.top) / 200) * 255;
 
-      draggingPoint = this.curvePoints.find(pt => Math.abs(pt.x - mx) < 15 && Math.abs(pt.y - my) < 15);
+      draggingPoint = this.curvePoints.find(pt => Math.abs(pt.x - mx) < 18 && Math.abs(pt.y - my) < 18);
     });
 
     window.addEventListener('mousemove', (e) => {
       if (!draggingPoint) return;
-      const rect = curveCanvas.getBoundingClientRect();
-      const mx = Math.max(0, Math.min(255, ((e.clientX - rect.left) / 200) * 255));
-      const my = Math.max(0, Math.min(255, 255 - ((e.clientY - rect.top) / 200) * 255));
+      const my = Math.max(0, Math.min(255, 255 - ((e.clientY - curveCanvas.getBoundingClientRect().top) / 200) * 255));
 
       draggingPoint.y = Math.round(my);
       this.curveLut = this.buildCurveLut();
@@ -572,31 +649,41 @@ class RetouchEngine {
         p.texture = 15;
         p.eyeBrighten = 50;
         p.teethWhiten = 45;
-        p.vignette = -20;
+        p.vignetteAmount = -20;
         break;
       case 'golden_hour':
-        p.temp = 25;
-        p.tint = 5;
-        p.exposure = 8;
+        p.wbTemp = 7500;
+        p.wbTint = 12;
+        p.exposure = 0.35;
         p.skinSmooth = 45;
-        p.skinRosy = 20;
         p.vibrance = 20;
         p.hslOrangeSat = 15;
+        p.hslOrangeLum = 8;
         break;
       case 'corporate_clean':
         p.skinSmooth = 40;
         p.blemishRemoval = 55;
         p.teethWhiten = 50;
-        p.clarity = 10;
-        p.contrast = 5;
+        p.clarity = 12;
+        p.contrast = 8;
         break;
       case 'dramatic_bw':
         p.saturation = -100;
         p.contrast = 35;
         p.clarity = 25;
         p.texture = 30;
-        p.vignette = -35;
+        p.vignetteAmount = -35;
         p.skinSmooth = 50;
+        break;
+      case 'cinematic_mood':
+        p.wbTemp = 6000;
+        p.contrast = 20;
+        p.shadows = 15;
+        p.grainAmount = 30;
+        p.gradeShadowsHue = 210;
+        p.gradeShadowsSat = 35;
+        p.gradeHighlightsHue = 42;
+        p.gradeHighlightsSat = 25;
         break;
     }
 
@@ -611,9 +698,18 @@ class RetouchEngine {
       if (slider) {
         slider.value = v;
         const disp = document.getElementById(`val_${k}`);
-        if (disp) disp.textContent = v > 0 && slider.min < 0 ? `+${v}` : v;
+        if (disp) {
+          if (k === 'wbTemp') {
+            disp.textContent = `${v}K`;
+          } else if (k === 'exposure') {
+            disp.textContent = v > 0 ? `+${v.toFixed(2)} EV` : `${v.toFixed(2)} EV`;
+          } else {
+            disp.textContent = (v > 0 && slider.min < 0) ? `+${v}` : v;
+          }
+        }
       }
     }
+    this.selectHslBand(this.activeHslBand);
   }
 
   resetAll() {
@@ -649,6 +745,5 @@ class RetouchEngine {
 // Global initialization
 window.addEventListener('DOMContentLoaded', () => {
   window.retouchEngine = new RetouchEngine();
-  // Auto load default sample portrait
   window.retouchEngine.loadImage('../test_portrait_4000x6000.jpg');
 });

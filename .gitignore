@@ -10,3 +10,8 @@ __pycache__/
 *.tmp
 *.log
 *.zip
+
+# Dependencies & Build artifacts
+node_modules/
+dist/
+build.js
