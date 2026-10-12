@@ -76,10 +76,16 @@ cp -f "$DIR/test_portrait_4000x6000.jpg" "$APP_BUNDLE/Contents/Resources/" 2>/de
 cat <<'EOF' > "$APP_BUNDLE/Contents/MacOS/launch"
 #!/usr/bin/env bash
 RESOURCES_DIR="$(cd "$(dirname "$0")/../Resources" && pwd)"
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 export PYTHONPATH="$RESOURCES_DIR"
 
-# Launch splash screen or directly open studio
-python3 "$RESOURCES_DIR/app/server.py"
+if command -v python3 &>/dev/null; then
+    python3 "$RESOURCES_DIR/app/server.py"
+elif command -v python &>/dev/null; then
+    python "$RESOURCES_DIR/app/server.py"
+else
+    open "$RESOURCES_DIR/app/index.html"
+fi
 EOF
 chmod +x "$APP_BUNDLE/Contents/MacOS/launch"
 
