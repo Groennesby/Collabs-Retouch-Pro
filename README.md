@@ -61,12 +61,34 @@ python3 launch_retouch_pro.py
 ```
 
 ### macOS
-Run the native macOS installer script:
-```bash
-./install-mac.command
+Run the native macOS launcher script (handles Homebrew, Conda, and Apple Silicon / Intel automatically):
+```zsh
+chmod +x install-mac.command && ./install-mac.command
 ```
-Or launch the application bundle from Finder:
-`Collabs Retouch Pro.app`
+Or launch directly with the universal launcher:
+```zsh
+python3 launcher.py
+```
+
+#### macOS Tkinter Troubleshooting & Fix
+If you encounter `No module named '_tkinter'` on macOS (common with minimal Homebrew or Conda base environments):
+* **Homebrew:**
+  ```bash
+  brew install tcl-tk python-tk@3.12
+  ```
+* **Conda:**
+  ```bash
+  conda install -c conda-forge tk
+  ```
+* **Python.org:**
+  Download and install official Python installer from [python.org](https://www.python.org/downloads/macos/) which packages full Aqua Tcl/Tk by default.
+
+#### Building Standalone macOS App (PyInstaller)
+To bundle a self-contained offline macOS Application with embedded Tkinter:
+```bash
+pyinstaller Collabs-Retouch.spec
+```
+The output will be located in `dist/Collabs-Retouch.app`.
 
 ### Windows
 Run the Windows batch installer:

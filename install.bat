@@ -3,19 +3,39 @@ TITLE Collabs Retouch Pro Installer
 echo ==================================================
 echo    COLLABS RETOUCH PRO - WINDOWS INSTALLER
 echo ==================================================
-python --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo Python is required but not found. Please install Python from python.org.
+
+set WORKING_PYTHON=
+
+where python >nul 2>&1
+if %errorlevel% equ 0 (
+    python -c "import tkinter, tkinter.ttk; print('OK')" >nul 2>&1
+    if %errorlevel% equ 0 (
+        set WORKING_PYTHON=python
+    )
+)
+
+if "%WORKING_PYTHON%"=="" (
+    where py >nul 2>&1
+    if %errorlevel% equ 0 (
+        py -3 -c "import tkinter, tkinter.ttk; print('OK')" >nul 2>&1
+        if %errorlevel% equ 0 (
+            set WORKING_PYTHON=py -3
+        )
+    )
+)
+
+if "%WORKING_PYTHON%"=="" (
+    echo [ERROR] No working Python installation with Tkinter found!
+    echo Please install Python 3.10+ from https://www.python.org/downloads/
+    echo Make sure to check "tcl/tk and IDLE" during installation.
     pause
     exit /b 1
 )
-python -m pip install --upgrade pip pillow
-git --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo Git is required. Please install Git for Windows.
-    pause
-    exit /b 1
-)
-python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/Groennesby/Collabs-Retouch-Pro/main/install.py').read().decode())"
-echo Installation complete!
+
+echo [✓] Using Python: %WORKING_PYTHON%
+echo [*] Checking required dependencies (Pillow)...
+%WORKING_PYTHON% -m pip install --upgrade pip pillow
+
+echo [*] Launching Collabs Retouch Pro...
+%WORKING_PYTHON% launcher.py
 pause

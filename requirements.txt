@@ -1,0 +1,6 @@
+# Collabs Retouch Pro - Dependencies
+pillow>=10.0.0
+# Note: Tkinter is part of Python standard library.
+# On macOS (Homebrew): brew install python-tk@3.12 (or matching Python version)
+# On macOS (Conda):    conda install -c conda-forge tk
+# On Linux (Debian):   sudo apt install python3-tk
