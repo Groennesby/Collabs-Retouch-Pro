@@ -142,7 +142,9 @@ fi
 cp -r "$DIR/app" "$APP_BUNDLE/Contents/Resources/"
 cp -r "$DIR/src" "$APP_BUNDLE/Contents/Resources/"
 cp -f "$DIR/launcher.py" "$APP_BUNDLE/Contents/Resources/"
-cp -f "$DIR/test_portrait_4000x6000.jpg" "$APP_BUNDLE/Contents/Resources/app/" 2>/dev/null || true
+if [ -f "$DIR/test_portrait_4000x6000.jpg" ]; then
+    cp -f "$DIR/test_portrait_4000x6000.jpg" "$APP_BUNDLE/Contents/Resources/"
+fi
 
 # Launcher script inside .app
 cat <<EOF > "$APP_BUNDLE/Contents/MacOS/launch"

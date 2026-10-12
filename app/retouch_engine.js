@@ -764,6 +764,8 @@ class RetouchEngine {
 // Global initialization
 window.addEventListener('DOMContentLoaded', () => {
   window.retouchEngine = new RetouchEngine();
-  // Try loading default test portrait if present, otherwise cleanly wait for user import
-  window.retouchEngine.loadImage('test_portrait_4000x6000.jpg').catch(() => {});
+  // Load Farida Studio Sample 1 as default intro portrait
+  window.retouchEngine.loadImage('samples/Farida studio-4.jpg').catch(() => {
+    window.retouchEngine.loadImage('test_portrait_4000x6000.jpg').catch(() => {});
+  });
 });
