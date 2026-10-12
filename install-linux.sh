@@ -8,13 +8,7 @@
 set -e
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "$APP_DIR/icon.png" ]; then
-    ICON_SRC="$APP_DIR/icon.png"
-elif [ -f "$APP_DIR/splashscreens/Collabs_Retouch_Pro_RP_Icon.png" ]; then
-    ICON_SRC="$APP_DIR/splashscreens/Collabs_Retouch_Pro_RP_Icon.png"
-else
-    ICON_SRC="$APP_DIR/app/icon.png"
-fi
+ICON_SRC="$APP_DIR/splashscreens/Collabs_Retouch_Pro_RP_Icon.png"
 LAUNCHER="$APP_DIR/launch_retouch_pro.py"
 
 echo "=== COLLABS RETOUCH PRO — LINUX INSTALLER ==="

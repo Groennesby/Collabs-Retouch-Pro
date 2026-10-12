@@ -48,22 +48,6 @@ No CSS filter hacks (`brightness()`, `contrast()`, `blur()`). Every single slide
 
 ---
 
-## Installation & Quick Copy-Paste One-Liners
-
-### 🍏 macOS (One-Liner)
-```bash
-git clone https://github.com/Groennesby/Collabs-Retouch-Pro.git ~/collabs-retouch-pro && cd ~/collabs-retouch-pro && chmod +x install-mac.command && ./install-mac.command
-```
-
-### 🐧 Linux (One-Liner)
-```bash
-git clone https://github.com/Groennesby/Collabs-Retouch-Pro.git ~/collabs-retouch-pro && cd ~/collabs-retouch-pro && chmod +x install-linux.sh && ./install-linux.sh
-```
-
-### 🪟 Windows
-Clone or download the repository, then double-click `install-windows.bat`.
-
-
 ## Installation & Running
 
 ### Linux
