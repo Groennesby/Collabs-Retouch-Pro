@@ -17,6 +17,16 @@ fi
 
 APP_BUNDLE="$TARGET_DIR/Collabs Retouch Pro.app"
 echo "=== COLLABS RETOUCH PRO — MACOS INSTALLER ==="
+
+# Check for pre-built release package or download
+if [ -f "$DIR/macOS/Collabs_Retouch_Pro_1.0.0_macOS_App.zip" ]; then
+    echo "[*] Found pre-built macOS application package, installing directly..."
+    unzip -q -o "$DIR/macOS/Collabs_Retouch_Pro_1.0.0_macOS_App.zip" -d "$TARGET_DIR"
+    echo "[*] Application installed in $APP_BUNDLE"
+    open "$APP_BUNDLE" 2>/dev/null || true
+    exit 0
+fi
+
 echo "[*] Creating macOS Application bundle at: $APP_BUNDLE"
 
 rm -rf "$APP_BUNDLE"
