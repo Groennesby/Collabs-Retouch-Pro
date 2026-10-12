@@ -70,6 +70,7 @@ fi
 
 # 3. Copy Application Payload
 cp -r "$DIR/app" "$APP_BUNDLE/Contents/Resources/"
+cp -r "$DIR/src" "$APP_BUNDLE/Contents/Resources/"
 cp -f "$DIR/test_portrait_4000x6000.jpg" "$APP_BUNDLE/Contents/Resources/" 2>/dev/null || true
 
 # 4. Create MacOS/launch runner
@@ -78,8 +79,13 @@ cat <<'EOF' > "$APP_BUNDLE/Contents/MacOS/launch"
 RESOURCES_DIR="$(cd "$(dirname "$0")/../Resources" && pwd)"
 export PYTHONPATH="$RESOURCES_DIR"
 
-# Launch splash screen or directly open studio
-python3 "$RESOURCES_DIR/app/server.py"
+if command -v python3 >/dev/null 2>&1; then
+    python3 "$RESOURCES_DIR/src/app.py"
+elif command -v python >/dev/null 2>&1; then
+    python "$RESOURCES_DIR/src/app.py"
+else
+    echo "Error: Python not found"
+fi
 EOF
 chmod +x "$APP_BUNDLE/Contents/MacOS/launch"
 
