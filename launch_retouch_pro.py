@@ -11,9 +11,13 @@ import time
 import subprocess
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SPLASH_JPG = os.path.join(BASE_DIR, "splashscreens", "Collabs_Retouch_Pro_Splash_1_Editorial_Studio.jpg")
-SPLASH_PNG = os.path.join(BASE_DIR, "splashscreens", "Collabs_Retouch_Pro_Splash_1_Editorial_Studio.png")
-SPLASH_PATH = SPLASH_JPG if os.path.exists(SPLASH_JPG) else SPLASH_PNG
+SPLASH_CANDIDATES = [
+    os.path.join(BASE_DIR, "Finalsplash.jpg"),
+    os.path.join(BASE_DIR, "splashscreens", "Finalsplash.jpg"),
+    os.path.join(BASE_DIR, "splashscreens", "Collabs_Retouch_Pro_Splash_1_Editorial_Studio.jpg"),
+    os.path.join(BASE_DIR, "splashscreens", "Collabs_Retouch_Pro_Splash_1_Editorial_Studio.png"),
+]
+SPLASH_PATH = next((p for p in SPLASH_CANDIDATES if os.path.exists(p)), "")
 MIN_SPLASH_SECONDS = 5.0
 
 def show_splash_and_launch():

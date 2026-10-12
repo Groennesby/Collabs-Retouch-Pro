@@ -4,7 +4,7 @@
 
 The professional, high-performance AI portrait & RAW photo studio engineered by **Dave Groennesby** from **Collabs Software**.
 
-![Collabs Retouch Pro Splash](splashscreens/Collabs_Retouch_Pro_Splash_1_Editorial_Studio.jpg)
+![Collabs Retouch Pro Splash](Finalsplash.jpg)
 
 ---
 
