@@ -1,40 +1,62 @@
-# Retouch Pro
+<p align="center">
+  <img src="docs/logo.png" alt="Retouch Pro" width="140" />
+</p>
 
-Professional AI portrait & RAW photo editing — free, offline, no credits.
-**Made by Dave Groennesby · Collabs Software** (dave.groennesby@hotmail.com)
+<h1 align="center">Retouch Pro</h1>
 
-## Installers (macOS · Windows · Linux)
+<p align="center">
+  <b>Professional AI Portrait &amp; RAW Photo Editing</b><br/>
+  Free · Offline · No credits · No subscription
+</p>
 
-Native installers must be built on their own operating system. The workflow in
-`.github/workflows/release.yml` does that for you on GitHub for all three:
+<p align="center">
+  <img src="docs/splash.jpg" alt="Retouch Pro splash screen" width="760" />
+</p>
 
-1. Create a (free) GitHub repository and push this folder to it.
-2. Create a tag and push it:
-   ```bash
-   git tag v1.0.0 && git push origin v1.0.0
-   ```
-   (or run the workflow manually from the **Actions** tab → *Build Retouch Pro installers* → *Run workflow*)
-3. After ~10–15 minutes the **Releases** page contains:
-   | System  | Files |
-   |---------|-------|
-   | macOS   | `Retouch Pro_1.0.0_universal.dmg` (Apple Silicon + Intel) |
-   | Windows | `Retouch Pro_1.0.0_x64-setup.exe` and `.msi` |
-   | Linux   | `.AppImage`, `.deb`, `.rpm` |
+---
 
-The workflow first runs the slider tests (`cargo test`) so a broken build never ships.
+## ⬇️ Download
 
-## Local development
+<p align="center">
+  <a href="https://github.com/Groennesby/Collabs-Retouch-Pro/releases/latest"><b>➡️ Go to the latest release (all downloads)</b></a>
+</p>
+
+| System | Download this file | Notes |
+|--------|--------------------|-------|
+| 🪟 **Windows** 10 / 11 (64-bit) | **`Retouch Pro_…_x64-setup.exe`** (or the `.msi`) | Double-click to install. |
+| 🍎 **macOS** 11 or newer | **`Retouch Pro_…_universal.dmg`** | One file for **Apple Silicon (M1–M4) and Intel**. Open it, drag *Retouch Pro* to *Applications*. |
+| 🐧 **Linux** | **`.AppImage`** (any distro) · **`.deb`** (Ubuntu/Debian) · **`.rpm`** (Fedora) | AppImage: `chmod +x` and run. |
+
+> **First launch (the app is not code-signed):**
+> macOS — right-click the app → **Open** (once). Windows — SmartScreen → **More info → Run anyway**.
+
+## ✨ Features
+
+- 148 Lightroom-style sliders: tone, white balance, HSL, curves, colour grading, black &amp; white mixer, sharpening, lens corrections, grain, vignette
+- **AI Denoise** that works on both **RAW and JPG**
+- AI portrait retouching: skin, eyes, teeth, makeup, hair, face &amp; body reshape (478-point face mesh)
+- Split before/after view, filmstrip, batch-friendly workflow
+- 100 % offline — your photos never leave your computer
+
+## 🛠 For developers
 
 ```bash
 npm install
-npm run tauri dev      # run the app
-npm run tauri build    # installer for the OS you are on
+npm run tauri dev       # run the app
+npm run tauri build     # installer for the OS you are on
 cargo test --manifest-path src-tauri/Cargo.toml -- --nocapture   # slider tests
 ```
 
-## First launch on an unsigned build
+Installers for all three systems are built automatically by GitHub Actions
+(`.github/workflows/release.yml`) when a version tag is pushed:
 
-* **macOS:** right-click the app → *Open* (once), or *System Settings → Privacy & Security → Open Anyway*.
-* **Windows:** SmartScreen → *More info* → *Run anyway*.
+```bash
+git tag v1.0.1 && git push origin v1.0.1
+```
 
-Removing these warnings requires paid code-signing certificates (Apple Developer / Windows).
+---
+
+<p align="center">
+  Made by <b>Dave Groennesby</b> · <b>Collabs Software</b><br/>
+  © 2026 Collabs Software. All rights reserved.
+</p>
