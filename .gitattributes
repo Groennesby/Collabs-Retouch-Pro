@@ -1,0 +1,6 @@
+# Third-party / generated files: don't count them in GitHub's language statistics
+public/models/** linguist-vendored
+public/models/wasm/*.js linguist-vendored
+dist/** linguist-generated
+package-lock.json linguist-generated
+src-tauri/gen/** linguist-generated
