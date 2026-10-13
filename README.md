@@ -30,6 +30,22 @@
 > **First launch (the app is not code-signed):**
 > macOS — right-click the app → **Open** (once). Windows — SmartScreen → **More info → Run anyway**.
 
+### Or install from the terminal (one command)
+
+**macOS / Linux**
+```bash
+curl -fsSL https://raw.githubusercontent.com/Groennesby/Collabs-Retouch-Pro/main/install.sh | bash
+```
+
+**Windows** (PowerShell)
+```powershell
+irm https://raw.githubusercontent.com/Groennesby/Collabs-Retouch-Pro/main/install.ps1 | iex
+```
+
+These download the newest installer from the [Releases](https://github.com/Groennesby/Collabs-Retouch-Pro/releases) page for your system.
+If the Releases page is still empty, the installers are still being built — check the
+[Actions tab](https://github.com/Groennesby/Collabs-Retouch-Pro/actions) (takes about 15 minutes after a new version tag).
+
 ## ✨ Features
 
 - 148 Lightroom-style sliders: tone, white balance, HSL, curves, colour grading, black &amp; white mixer, sharpening, lens corrections, grain, vignette
