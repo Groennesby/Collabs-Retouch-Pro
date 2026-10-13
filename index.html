@@ -1,14 +1,775 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=app/index.html">
-  <title>Collabs Retouch Pro</title>
-  <script>
-    window.location.replace("app/index.html");
-  </script>
-</head>
-<body style="background:#0E0E10;color:#ECC870;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
-  <p>Loading Collabs Retouch Pro Studio... <a href="app/index.html" style="color:#ECC870;">Click here if not redirected</a></p>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Retouch Pro — AI Portrait &amp; RAW Studio (by Collabs Software)</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <!-- STARTUP SPLASH SCREEN OVERLAY (Official Retouch Pro — RP Metro Edition) -->
+    <div id="collabs-splash-modal" class="collabs-splash-overlay">
+      <div class="collabs-splash-stage">
+        <img
+          id="splash-hero-img"
+          src="/splash/Collabs_Retouch_Pro_Splash_User.png"
+          alt="Retouch Pro Splash Screen"
+          class="collabs-splash-img"
+        />
+        <div class="collabs-splash-controls">
+          <div class="splash-switcher-pills">
+            <span class="splash-With-label">Retouch Pro v1.0 • Made by Dave Groennesby (dave.groennesby@hotmail.com)</span>
+          </div>
+          <button id="btn-close-splash" class="splash-enter-btn">Enter Studio →</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="app" class="retouch-app">
+      <!-- COLLABS RETOUCH PRO TOP HEADER BAR -->
+      <header class="retouch-header">
+        <div class="retouch-header-left">
+          <div class="collabs-brand-cluster" id="btn-reopen-splash" title="Click to view Retouch Pro Splash Screen">
+            <img id="active-app-icon-img" src="/app_icon.png" alt="Retouch Pro RP" class="collabs-header-icon" />
+            <img src="/collabs_logo.png" alt="Collabs Software" class="collabs-header-logo" />
+            <span class="collabs-retouch-badge">RETOUCH PRO</span>
+          </div>
+          <button id="btn-import-top" class="retouch-btn-import">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>Import Photos</span>
+          </button>
+          <input id="file-input" type="file" accept="image/*,.cr2,.CR2,.cr3,.CR3,.nef,.NEF,.arw,.ARW,.dng,.DNG,.orf,.ORF,.rw2,.RW2,.raf,.RAF,.pef,.PEF,.heic,.HEIC,.jpg,.jpeg,.png,.webp,.tiff,.tif,.bmp" multiple style="display:none" />
+          <input id="ref-color-input" type="file" accept="image/*" style="display:none" />
+        </div>
+
+        <div class="retouch-header-center">
+          <button id="btn-tool-hand" class="canvas-tool-icon active" title="Pan / View Mode (H)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+          </button>
+          <button id="btn-spot-heal" class="canvas-tool-icon" title="Manual Blemish Healing Brush (B) — Click on spots to heal">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 5 3-3"/><path d="m2 22 3-3"/><path d="M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4Z"/><path d="M7.5 13.5 10 11"/><path d="M10.5 16.5 13 14"/><path d="m12 6 6 6 2.3-2.3a2.4 2.4 0 0 0 0-3.4l-2.6-2.6a2.4 2.4 0 0 0-3.4 0Z"/></svg>
+          </button>
+          <button id="btn-face-guides" class="canvas-tool-icon" title="Show &amp; Adjust 478-Point AI Facial Landmarks">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/></svg>
+          </button>
+          <div class="header-sep"></div>
+          <button id="btn-rot-left" class="canvas-tool-pill" title="Rotate 90° Counter-Clockwise (Left)">
+            <span>↺ 90° Left</span>
+          </button>
+          <button id="btn-rot-right" class="canvas-tool-pill" title="Rotate 90° Clockwise (Right)">
+            <span>↻ 90° Right</span>
+          </button>
+          <div class="header-sep"></div>
+          <button id="btn-split-view" class="canvas-tool-pill active" title="Toggle Before / After Split Wipe">
+            <span>Split View</span>
+          </button>
+          <button id="btn-hold-before" class="canvas-tool-pill" title="Hold (or Spacebar) for Original">
+            <span>Before (Space)</span>
+          </button>
+          <div class="zoom-cluster">
+            <button id="btn-zoom-out" class="zoom-btn" title="Zoom Out">−</button>
+            <span id="zoom-readout">Fit</span>
+            <button id="btn-zoom-in" class="zoom-btn" title="Zoom In">+</button>
+          </div>
+        </div>
+
+        <div class="retouch-header-right">
+          <div class="credits-pill" title="Unlimited Free Pro Plan — Local Rust &amp; WebGL Engine">
+            <span class="credits-dot"></span>
+            <span class="credits-count-badge">✦ 9,000 Exports Remaining</span>
+            <span class="credits-divider">•</span>
+            <span id="render-time-label">478-Pt Face AI ✓</span>
+          </div>
+          <button id="btn-show-splash-top" class="retouch-btn-ghost" title="View Startup Splash Screen">Splash</button>
+          <button id="btn-reset-all" class="retouch-btn-ghost">Reset All</button>
+          <button id="btn-export" class="retouch-btn-export">Export</button>
+        </div>
+      </header>
+
+      <!-- MAIN 4-COLUMN RETOUCH WORKSPACE -->
+      <div class="retouch-body">
+        <!-- LEFT PANEL: PRESETS / PROJECT + PERMANENT BOTTOM-LEFT COLLABS LOGO & MASCOT CARD -->
+        <aside class="retouch-left-panel">
+          <div class="left-panel-tabs">
+            <button class="left-tab active" data-ltab="ltab-presets">Presets</button>
+            <button class="left-tab" data-ltab="ltab-project">Project</button>
+          </div>
+
+          <!-- PRESETS DRAWER -->
+          <div id="ltab-presets" class="left-tab-content active">
+            <div class="preset-search-box">
+              <input id="preset-search" type="text" placeholder="Search Presets..." />
+            </div>
+
+            <div class="preset-category">
+              <div class="preset-cat-header">▾ Portrait &amp; Beauty</div>
+              <div class="preset-list">
+                <button class="retouch-preset-item" data-preset="clean_natural">
+                  <span class="preset-badge">AI</span>
+                  <div class="preset-meta">
+                    <div class="p-title">Clean Natural Portrait</div>
+                    <div class="p-sub">Pore-preserving FS + subtle eye pop</div>
+                  </div>
+                </button>
+                <button class="retouch-preset-item" data-preset="high_fashion">
+                  <span class="preset-badge">PRO</span>
+                  <div class="preset-meta">
+                    <div class="p-title">Editorial Magazine Skin</div>
+                    <div class="p-sub">Full FS + 3D Dodge &amp; Burn + Sculpt</div>
+                  </div>
+                </button>
+                <button class="retouch-preset-item" data-preset="glamour_makeup">
+                  <span class="preset-badge">AI</span>
+                  <div class="preset-meta">
+                    <div class="p-title">Glamour Makeup &amp; Glow</div>
+                    <div class="p-sub">Rosy skin + contour + berry lip tint</div>
+                  </div>
+                </button>
+                <button class="retouch-preset-item" data-preset="wedding_luminous">
+                  <span class="preset-badge">AI</span>
+                  <div class="preset-meta">
+                    <div class="p-title">Wedding Luminous Soft</div>
+                    <div class="p-sub">Warm bridal skin + teeth whiten</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div class="preset-category">
+              <div class="preset-cat-header">▾ Headshots &amp; Studio</div>
+              <div class="preset-list">
+                <button class="retouch-preset-item" data-preset="corporate_exec">
+                  <span class="preset-badge">PRO</span>
+                  <div class="preset-meta">
+                    <div class="p-title">Executive Headshot</div>
+                    <div class="p-sub">Dark circles + anti-shine + de-wrinkle</div>
+                  </div>
+                </button>
+                <button class="retouch-preset-item" data-preset="passport_id">
+                  <span class="preset-badge">ID</span>
+                  <div class="preset-meta">
+                    <div class="p-title">Pure White Backdrop ID</div>
+                    <div class="p-sub">Clean white studio + stray hair removal</div>
+                  </div>
+                </button>
+                <button class="retouch-preset-item" data-preset="cinematic_film">
+                  <span class="preset-badge">LUT</span>
+                  <div class="preset-meta">
+                    <div class="p-title">Cinematic Teal &amp; Amber</div>
+                    <div class="p-sub">Split color grade + shallow bokeh</div>
+                  </div>
+                </button>
+                <button class="retouch-preset-item" data-preset="bw_dramatic">
+                  <span class="preset-badge">B&amp;W</span>
+                  <div class="preset-meta">
+                    <div class="p-title">Monochrome Studio</div>
+                    <div class="p-sub">High-contrast B&amp;W + fine film grain</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div class="preset-category">
+              <div class="preset-cat-header">
+                <span>▾ My Saved Presets</span>
+                <button id="btn-save-user-preset" class="mini-save-btn">+ Save Current</button>
+              </div>
+              <div id="user-presets-container" class="preset-list"></div>
+            </div>
+          </div>
+
+          <!-- PROJECT / FOLDERS DRAWER -->
+          <div id="ltab-project" class="left-tab-content">
+            <div class="project-box">
+              <button id="btn-import-side" class="retouch-btn-import full-w" style="justify-content:center; margin-bottom:10px;">
+                + Import Photos from Disk
+              </button>
+              <div class="face-card">
+                <div class="face-card-title">Detected Face Profile</div>
+                <div class="face-tag-row">
+                  <span class="face-pill active">478-Point Face Mesh + 6-Class AI</span>
+                </div>
+                <p class="face-help">
+                  Tip: Click the Face Landmarks icon in the top toolbar to inspect exact eye, eyebrow, and lip protection contours.
+                </p>
+              </div>
+              <div class="face-card" style="margin-top:10px; text-align:center;">
+                <div class="face-card-title" style="color:#ffee00;">Switch App Dock Icon</div>
+                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:6px;">
+                  <img src="/icons/RP_Icon_1_Metro_Yellow_White_RP.png" class="icon-choice-thumb" onclick="document.getElementById('active-app-icon-img').src=this.src" title="RP Icon 1: Metro Yellow + White RP (Official)" />
+                  <img src="/icons/RP_Icon_2_Metro_Heavy_White_RP.png" class="icon-choice-thumb" onclick="document.getElementById('active-app-icon-img').src=this.src" title="RP Icon 2: Heavy Block RP" />
+                  <img src="/icons/RP_Icon_3_Metro_Yellow_White_Rp.png" class="icon-choice-thumb" onclick="document.getElementById('active-app-icon-img').src=this.src" title="RP Icon 3: Classic Rp" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PERMANENT BOTTOM-LEFT COLLABS LOGO & MASCOT STUDIO DOCK -->
+          <div id="collabs-bottom-left-card" class="collabs-bottom-left-dock">
+            <div class="collabs-dock-top">
+              <img
+                src="/icons/Transparant_2_Mascot_Met_Camera_En_Zonnebril.png"
+                alt="Collabs Mascot"
+                class="collabs-dock-mascot"
+              />
+              <div class="collabs-dock-brand">
+                <img src="/collabs_logo.png" alt="Collabs Software" class="collabs-dock-logo" />
+                <div class="collabs-dock-title">RETOUCH PRO</div>
+                <div class="collabs-dock-sub">AI Portrait &amp; RAW Engine</div>
+              </div>
+            </div>
+            <div class="collabs-dock-credits">
+              <div>Made by <strong>Dave Groennesby</strong></div>
+              <div class="collabs-dock-email">dave.groennesby@hotmail.com</div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- CENTER STAGE: DUAL/TRIPLE CANVAS + CULLING FILMSTRIP + SYNC BAR -->
+        <main class="retouch-center">
+          <div id="canvas-viewport" class="retouch-viewport">
+            <div id="canvas-wrapper" class="retouch-canvas-wrap">
+              <canvas id="after-canvas"></canvas>
+              <canvas id="before-canvas"></canvas>
+              <canvas id="overlay-canvas"></canvas>
+
+              <div id="split-line" class="retouch-split-line">
+                <div class="retouch-split-pill tag-before">Before</div>
+                <div class="retouch-split-knob">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+                <div class="retouch-split-pill tag-after">After</div>
+              </div>
+            </div>
+
+            <!-- Floating Spot Heal HUD -->
+            <div id="spot-mode-banner" class="spot-hud hidden">
+              <span>🩹 <strong>Spot Healing Brush:</strong> Click any blemish on the portrait</span>
+              <button id="btn-undo-spot" class="hud-chip">Undo</button>
+              <button id="btn-clear-spots" class="hud-chip">Clear All</button>
+            </div>
+
+            <!-- Bottom-left metadata & live pixel color verifier overlay -->
+            <div class="viewport-meta-bar">
+              <span id="active-filename-label">Editorial_Portrait_01.jpg</span>
+              <span>•</span>
+              <span id="resolution-label">1024 × 1280 px</span>
+              <span>•</span>
+              <span id="pixel-picker-readout">RGB(—, —, —)</span>
+            </div>
+          </div>
+
+          <!-- BOTTOM FILMSTRIP & BATCH SYNC BAR -->
+          <footer class="retouch-filmstrip-panel">
+            <div class="filmstrip-toolbar">
+              <div class="filmstrip-left-meta">
+                <span class="filmstrip-count">All Photos (<span id="photo-count-badge">4</span>)</span>
+                <button id="btn-import-strip" class="strip-add-btn">+ Add Photos</button>
+              </div>
+              <div class="filmstrip-sync-controls">
+                <button id="btn-copy-settings" class="retouch-sync-btn">Copy Edits</button>
+                <button id="btn-paste-settings" class="retouch-sync-btn" disabled>Paste Edits</button>
+                <button id="btn-sync-all" class="retouch-sync-btn primary-sync">Sync Edits to All Photos</button>
+              </div>
+            </div>
+            <div id="filmstrip-track" class="retouch-filmstrip-track"></div>
+          </footer>
+        </main>
+
+        <!-- RIGHT INSPECTOR PANEL (320px) -->
+        <aside class="retouch-right-inspector">
+          <!-- LIVE RGB HISTOGRAM (Always visible at top of right panel like Retouch) -->
+          <div class="retouch-histogram-block">
+            <canvas id="histogram-canvas" width="290" height="72"></canvas>
+            <div class="hist-meta-row">
+              <span>RGB Parade</span>
+              <span id="hist-exposure-info">16-Bit Pipeline • Rust SIMD</span>
+            </div>
+          </div>
+
+          <!-- MODULE 1: COLOR ADJUSTMENT (RAW / INTERACTIVE CURVES / 8-CHANNEL HSL / COLOR MATCH) -->
+          <div id="mod-color" class="retouch-module-pane">
+            <div class="module-header-title">Color Adjustment</div>
+
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ AI Color Looks &amp; Profile</div>
+              <div class="retouch-acc-body">
+                <select id="lutPreset" class="retouch-select">
+                  <option value="none">Retouch Standard Color</option>
+                  <option value="clean_portrait">Clean Commercial Portrait</option>
+                  <option value="fuji_pro">Fujifilm Pro 400H Pastel</option>
+                  <option value="kodak_gold">Kodak Portra 400 Warm</option>
+                  <option value="cinematic_teal">Cinematic Teal &amp; Orange</option>
+                  <option value="warm_wedding">Golden Hour Bridal</option>
+                  <option value="bw_studio">Ilford Delta B&amp;W</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- COLOR MATCH (REFERENCE HISTOGRAM TRANSFER) -->
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ AI Color Match (Reference LUT)</div>
+              <div class="retouch-acc-body">
+                <div style="display:flex; gap:6px; align-items:center;">
+                  <button id="btn-load-color-ref" class="retouch-sync-btn" style="flex:1;">+ Load Reference Image</button>
+                  <button id="btn-clear-color-ref" class="retouch-sync-btn" title="Reset Reference">Clear</button>
+                </div>
+                <div class="retouch-slider-item" style="margin-top:4px;">
+                  <div class="s-head"><span>Color Match Strength</span><span class="val" data-for="colorMatchStrength">0</span></div>
+                  <input type="range" class="retouch-slider" id="colorMatchStrength" min="0" max="100" value="0" />
+                </div>
+              </div>
+            </div>
+
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ White Balance</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item">
+                  <div class="s-head"><span>Temperature</span><span class="val" data-for="temperature">0</span></div>
+                  <input type="range" class="retouch-slider wb-temp" id="temperature" min="-100" max="100" value="0" />
+                </div>
+                <div class="retouch-slider-item">
+                  <div class="s-head"><span>Tint</span><span class="val" data-for="tint">0</span></div>
+                  <input type="range" class="retouch-slider wb-tint" id="tint" min="-100" max="100" value="0" />
+                </div>
+              </div>
+            </div>
+
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Basic Tone &amp; Presence</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>Exposure</span><span class="val" data-for="exposure">0</span></div><input type="range" class="retouch-slider" id="exposure" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Contrast</span><span class="val" data-for="contrast">0</span></div><input type="range" class="retouch-slider" id="contrast" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Highlights</span><span class="val" data-for="highlights">0</span></div><input type="range" class="retouch-slider" id="highlights" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Shadows</span><span class="val" data-for="shadows">0</span></div><input type="range" class="retouch-slider" id="shadows" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Whites</span><span class="val" data-for="whites">0</span></div><input type="range" class="retouch-slider" id="whites" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Blacks</span><span class="val" data-for="blacks">0</span></div><input type="range" class="retouch-slider" id="blacks" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Texture</span><span class="val" data-for="texture">0</span></div><input type="range" class="retouch-slider" id="texture" min="-50" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Clarity</span><span class="val" data-for="clarity">0</span></div><input type="range" class="retouch-slider" id="clarity" min="-50" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Dehaze</span><span class="val" data-for="dehaze">0</span></div><input type="range" class="retouch-slider" id="dehaze" min="-50" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Vibrance</span><span class="val" data-for="vibrance">0</span></div><input type="range" class="retouch-slider" id="vibrance" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Saturation</span><span class="val" data-for="saturation">0</span></div><input type="range" class="retouch-slider" id="saturation" min="-100" max="100" value="0" /></div>
+              </div>
+            </div>
+
+            <!-- INTERACTIVE 256-ENTRY SPLINE TONE CURVE GRAPH + PARAMETRIC SLIDERS -->
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Interactive Tone Curve (256-LUT)</div>
+              <div class="retouch-acc-body">
+                <div class="curve-canvas-box">
+                  <canvas id="tone-curve-canvas" width="268" height="180" title="Click to add control point • Drag to adjust • Double-click point to remove"></canvas>
+                  <div class="curve-toolbar-row">
+                    <span class="curve-hint">Click &amp; drag points on curve</span>
+                    <button id="btn-reset-curve" class="mini-save-btn">Reset Curve</button>
+                  </div>
+                </div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Highlights</span><span class="val" data-for="curveHighlights">0</span></div><input type="range" class="retouch-slider" id="curveHighlights" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Lights</span><span class="val" data-for="curveLights">0</span></div><input type="range" class="retouch-slider" id="curveLights" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Darks</span><span class="val" data-for="curveDarks">0</span></div><input type="range" class="retouch-slider" id="curveDarks" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Shadows</span><span class="val" data-for="curveShadows">0</span></div><input type="range" class="retouch-slider" id="curveShadows" min="-100" max="100" value="0" /></div>
+              </div>
+            </div>
+
+            <!-- 8-CHANNEL HSL COLOR MIXER -->
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ 8-Channel HSL Color Mixer</div>
+              <div class="retouch-acc-body">
+                <div class="hsl-color-dots" id="hsl-band-tabs">
+                  <button class="hsl-dot active" data-hsl="Red" style="background:#ef4444;" title="Red"></button>
+                  <button class="hsl-dot" data-hsl="Orange" style="background:#f97316;" title="Orange (Skin Tone)"></button>
+                  <button class="hsl-dot" data-hsl="Yellow" style="background:#eab308;" title="Yellow"></button>
+                  <button class="hsl-dot" data-hsl="Green" style="background:#22c55e;" title="Green"></button>
+                  <button class="hsl-dot" data-hsl="Aqua" style="background:#06b6d4;" title="Aqua / Cyan"></button>
+                  <button class="hsl-dot" data-hsl="Blue" style="background:#3b82f6;" title="Blue"></button>
+                  <button class="hsl-dot" data-hsl="Purple" style="background:#a855f7;" title="Purple"></button>
+                  <button class="hsl-dot" data-hsl="Magenta" style="background:#ec4899;" title="Magenta"></button>
+                </div>
+
+                <!-- Dynamic 8-Band HSL Panes -->
+                <div class="hsl-band-pane active" data-hsl-pane="Red">
+                  <div class="sub-badge">Red Channel</div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Red Hue</span><span class="val" data-for="hslRedHue">0</span></div><input type="range" class="retouch-slider" id="hslRedHue" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Red Saturation</span><span class="val" data-for="hslRedSat">0</span></div><input type="range" class="retouch-slider" id="hslRedSat" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Red Luminance</span><span class="val" data-for="hslRedLum">0</span></div><input type="range" class="retouch-slider" id="hslRedLum" min="-100" max="100" value="0" /></div>
+                </div>
+
+                <div class="hsl-band-pane" data-hsl-pane="Orange">
+                  <div class="sub-badge">Orange Channel (Skin Tone)</div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Orange Hue</span><span class="val" data-for="hslOrangeHue">0</span></div><input type="range" class="retouch-slider" id="hslOrangeHue" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Orange Saturation</span><span class="val" data-for="hslOrangeSat">0</span></div><input type="range" class="retouch-slider" id="hslOrangeSat" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Orange Luminance</span><span class="val" data-for="hslOrangeLum">0</span></div><input type="range" class="retouch-slider" id="hslOrangeLum" min="-100" max="100" value="0" /></div>
+                </div>
+
+                <div class="hsl-band-pane" data-hsl-pane="Yellow">
+                  <div class="sub-badge">Yellow Channel</div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Yellow Hue</span><span class="val" data-for="hslYellowHue">0</span></div><input type="range" class="retouch-slider" id="hslYellowHue" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Yellow Saturation</span><span class="val" data-for="hslYellowSat">0</span></div><input type="range" class="retouch-slider" id="hslYellowSat" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Yellow Luminance</span><span class="val" data-for="hslYellowLum">0</span></div><input type="range" class="retouch-slider" id="hslYellowLum" min="-100" max="100" value="0" /></div>
+                </div>
+
+                <div class="hsl-band-pane" data-hsl-pane="Green">
+                  <div class="sub-badge">Green Channel</div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Green Hue</span><span class="val" data-for="hslGreenHue">0</span></div><input type="range" class="retouch-slider" id="hslGreenHue" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Green Saturation</span><span class="val" data-for="hslGreenSat">0</span></div><input type="range" class="retouch-slider" id="hslGreenSat" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Green Luminance</span><span class="val" data-for="hslGreenLum">0</span></div><input type="range" class="retouch-slider" id="hslGreenLum" min="-100" max="100" value="0" /></div>
+                </div>
+
+                <div class="hsl-band-pane" data-hsl-pane="Aqua">
+                  <div class="sub-badge">Aqua / Cyan Channel</div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Aqua Hue</span><span class="val" data-for="hslAquaHue">0</span></div><input type="range" class="retouch-slider" id="hslAquaHue" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Aqua Saturation</span><span class="val" data-for="hslAquaSat">0</span></div><input type="range" class="retouch-slider" id="hslAquaSat" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Aqua Luminance</span><span class="val" data-for="hslAquaLum">0</span></div><input type="range" class="retouch-slider" id="hslAquaLum" min="-100" max="100" value="0" /></div>
+                </div>
+
+                <div class="hsl-band-pane" data-hsl-pane="Blue">
+                  <div class="sub-badge">Blue Channel</div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Blue Hue</span><span class="val" data-for="hslBlueHue">0</span></div><input type="range" class="retouch-slider" id="hslBlueHue" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Blue Saturation</span><span class="val" data-for="hslBlueSat">0</span></div><input type="range" class="retouch-slider" id="hslBlueSat" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Blue Luminance</span><span class="val" data-for="hslBlueLum">0</span></div><input type="range" class="retouch-slider" id="hslBlueLum" min="-100" max="100" value="0" /></div>
+                </div>
+
+                <div class="hsl-band-pane" data-hsl-pane="Purple">
+                  <div class="sub-badge">Purple Channel</div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Purple Hue</span><span class="val" data-for="hslPurpleHue">0</span></div><input type="range" class="retouch-slider" id="hslPurpleHue" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Purple Saturation</span><span class="val" data-for="hslPurpleSat">0</span></div><input type="range" class="retouch-slider" id="hslPurpleSat" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Purple Luminance</span><span class="val" data-for="hslPurpleLum">0</span></div><input type="range" class="retouch-slider" id="hslPurpleLum" min="-100" max="100" value="0" /></div>
+                </div>
+
+                <div class="hsl-band-pane" data-hsl-pane="Magenta">
+                  <div class="sub-badge">Magenta Channel</div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Magenta Hue</span><span class="val" data-for="hslMagentaHue">0</span></div><input type="range" class="retouch-slider" id="hslMagentaHue" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Magenta Saturation</span><span class="val" data-for="hslMagentaSat">0</span></div><input type="range" class="retouch-slider" id="hslMagentaSat" min="-100" max="100" value="0" /></div>
+                  <div class="retouch-slider-item"><div class="s-head"><span>Magenta Luminance</span><span class="val" data-for="hslMagentaLum">0</span></div><input type="range" class="retouch-slider" id="hslMagentaLum" min="-100" max="100" value="0" /></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Color Grading &amp; Detail</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>Shadow Tint Hue</span><span class="val" data-for="gradeShadowHue">210</span></div><input type="range" class="retouch-slider" id="gradeShadowHue" min="0" max="360" value="210" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Shadow Tint Amount</span><span class="val" data-for="gradeShadowSat">0</span></div><input type="range" class="retouch-slider" id="gradeShadowSat" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Highlight Tint Hue</span><span class="val" data-for="gradeHighHue">38</span></div><input type="range" class="retouch-slider" id="gradeHighHue" min="0" max="360" value="38" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Highlight Tint Amount</span><span class="val" data-for="gradeHighSat">0</span></div><input type="range" class="retouch-slider" id="gradeHighSat" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Sharpening</span><span class="val" data-for="sharpenAmount">0</span></div><input type="range" class="retouch-slider" id="sharpenAmount" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Luminance Denoise</span><span class="val" data-for="noiseReduction">0</span></div><input type="range" class="retouch-slider" id="noiseReduction" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Film Grain</span><span class="val" data-for="filmGrain">0</span></div><input type="range" class="retouch-slider" id="filmGrain" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Lens Vignetting</span><span class="val" data-for="vignette">0</span></div><input type="range" class="retouch-slider" id="vignette" min="-100" max="100" value="0" /></div>
+              </div>
+            </div>
+
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Black &amp; White Mixer</div>
+              <div class="retouch-acc-body">
+                <select id="treatment" class="retouch-select" style="margin-bottom:8px;"><option value="color">Color</option><option value="bw">Black &amp; White</option></select>
+                <div class="retouch-slider-item"><div class="s-head"><span>Red</span><span class="val" data-for="bwRed">0</span></div><input type="range" class="retouch-slider" id="bwRed" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Orange</span><span class="val" data-for="bwOrange">0</span></div><input type="range" class="retouch-slider" id="bwOrange" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Yellow</span><span class="val" data-for="bwYellow">0</span></div><input type="range" class="retouch-slider" id="bwYellow" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Green</span><span class="val" data-for="bwGreen">0</span></div><input type="range" class="retouch-slider" id="bwGreen" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Aqua</span><span class="val" data-for="bwAqua">0</span></div><input type="range" class="retouch-slider" id="bwAqua" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Blue</span><span class="val" data-for="bwBlue">0</span></div><input type="range" class="retouch-slider" id="bwBlue" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Purple</span><span class="val" data-for="bwPurple">0</span></div><input type="range" class="retouch-slider" id="bwPurple" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Magenta</span><span class="val" data-for="bwMagenta">0</span></div><input type="range" class="retouch-slider" id="bwMagenta" min="-100" max="100" value="0" /></div>
+              </div>
+            </div>
+
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Color Grading — Midtones, Global &amp; Luminance</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>Midtone Hue</span><span class="val" data-for="gradeMidHue">120</span></div><input type="range" class="retouch-slider" id="gradeMidHue" min="0" max="360" value="120" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Midtone Amount</span><span class="val" data-for="gradeMidSat">0</span></div><input type="range" class="retouch-slider" id="gradeMidSat" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Global Hue</span><span class="val" data-for="gradeGlobalHue">45</span></div><input type="range" class="retouch-slider" id="gradeGlobalHue" min="0" max="360" value="45" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Global Amount</span><span class="val" data-for="gradeGlobalSat">0</span></div><input type="range" class="retouch-slider" id="gradeGlobalSat" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Shadow Luminance</span><span class="val" data-for="gradeShadowLum">0</span></div><input type="range" class="retouch-slider" id="gradeShadowLum" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Midtone Luminance</span><span class="val" data-for="gradeMidLum">0</span></div><input type="range" class="retouch-slider" id="gradeMidLum" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Highlight Luminance</span><span class="val" data-for="gradeHighLum">0</span></div><input type="range" class="retouch-slider" id="gradeHighLum" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Global Luminance</span><span class="val" data-for="gradeGlobalLum">0</span></div><input type="range" class="retouch-slider" id="gradeGlobalLum" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Blending</span><span class="val" data-for="gradeBlending">50</span></div><input type="range" class="retouch-slider" id="gradeBlending" min="0" max="100" value="50" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Balance</span><span class="val" data-for="gradeBalance">0</span></div><input type="range" class="retouch-slider" id="gradeBalance" min="-100" max="100" value="0" /></div>
+              </div>
+            </div>
+
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Detail — Sharpen Radius, Detail &amp; Masking</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>AI Denoise (RAW &amp; JPG)</span><span class="val" data-for="aiDenoise">0</span></div><input type="range" class="retouch-slider" id="aiDenoise" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Denoise — Keep Detail</span><span class="val" data-for="nrDetail">50</span></div><input type="range" class="retouch-slider" id="nrDetail" min="0" max="100" value="50" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Sharpen Radius</span><span class="val" data-for="sharpenRadius">1</span></div><input type="range" class="retouch-slider" id="sharpenRadius" min="0.5" max="3" value="1" step="0.1" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Sharpen Detail</span><span class="val" data-for="sharpenDetail">25</span></div><input type="range" class="retouch-slider" id="sharpenDetail" min="0" max="100" value="25" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Sharpen Masking</span><span class="val" data-for="sharpenMasking">0</span></div><input type="range" class="retouch-slider" id="sharpenMasking" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Color Noise Reduction</span><span class="val" data-for="nrColor">0</span></div><input type="range" class="retouch-slider" id="nrColor" min="0" max="100" value="0" /></div>
+              </div>
+            </div>
+
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Effects — Grain &amp; Vignette Controls</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>Grain Size</span><span class="val" data-for="grainSize">25</span></div><input type="range" class="retouch-slider" id="grainSize" min="0" max="100" value="25" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Grain Roughness</span><span class="val" data-for="grainRoughness">50</span></div><input type="range" class="retouch-slider" id="grainRoughness" min="0" max="100" value="50" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Vignette Midpoint</span><span class="val" data-for="vignetteMidpoint">50</span></div><input type="range" class="retouch-slider" id="vignetteMidpoint" min="0" max="100" value="50" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Vignette Roundness</span><span class="val" data-for="vignetteRoundness">0</span></div><input type="range" class="retouch-slider" id="vignetteRoundness" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Vignette Feather</span><span class="val" data-for="vignetteFeather">50</span></div><input type="range" class="retouch-slider" id="vignetteFeather" min="0" max="100" value="50" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Vignette Highlights</span><span class="val" data-for="vignetteHighlights">0</span></div><input type="range" class="retouch-slider" id="vignetteHighlights" min="0" max="100" value="0" /></div>
+              </div>
+            </div>
+
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Lens Corrections</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>Distortion</span><span class="val" data-for="opticsDistortion">0</span></div><input type="range" class="retouch-slider" id="opticsDistortion" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Lens Vignetting Correction</span><span class="val" data-for="opticsVignetting">0</span></div><input type="range" class="retouch-slider" id="opticsVignetting" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Vignetting Midpoint</span><span class="val" data-for="opticsVignettingMidpoint">50</span></div><input type="range" class="retouch-slider" id="opticsVignettingMidpoint" min="0" max="100" value="50" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Chromatic Aberration — Red/Cyan</span><span class="val" data-for="opticsCaRed">0</span></div><input type="range" class="retouch-slider" id="opticsCaRed" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Chromatic Aberration — Blue/Yellow</span><span class="val" data-for="opticsCaBlue">0</span></div><input type="range" class="retouch-slider" id="opticsCaBlue" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Defringe Purple</span><span class="val" data-for="opticsDefringePurple">0</span></div><input type="range" class="retouch-slider" id="opticsDefringePurple" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Defringe Green</span><span class="val" data-for="opticsDefringeGreen">0</span></div><input type="range" class="retouch-slider" id="opticsDefringeGreen" min="0" max="100" value="0" /></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODULE 2: PORTRAIT RETOUCHING (ACTIVE BY DEFAULT LIKE RETOUCH) -->
+          <div id="mod-portrait" class="retouch-module-pane active">
+            <div class="module-header-title">Portrait Retouching</div>
+
+            <!-- 1. Blemish Removal -->
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Blemish Removal</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>Freckle &amp; Acne</span><span class="val" data-for="freckleAcne">0</span></div><input type="range" class="retouch-slider" id="freckleAcne" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Face Mole</span><span class="val" data-for="faceMole">0</span></div><input type="range" class="retouch-slider" id="faceMole" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Face Shine</span><span class="val" data-for="faceShine">0</span></div><input type="range" class="retouch-slider" id="faceShine" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Dark Circles</span><span class="val" data-for="darkCircles">0</span></div><input type="range" class="retouch-slider" id="darkCircles" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Eye Bags / Lower Eyelid</span><span class="val" data-for="eyeBags">0</span></div><input type="range" class="retouch-slider" id="eyeBags" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Forehead Wrinkles</span><span class="val" data-for="foreheadWrinkles">0</span></div><input type="range" class="retouch-slider" id="foreheadWrinkles" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Nasolabial Folds (Smile Lines)</span><span class="val" data-for="nasolabialFolds">0</span></div><input type="range" class="retouch-slider" id="nasolabialFolds" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Neck Wrinkles</span><span class="val" data-for="neckWrinkles">0</span></div><input type="range" class="retouch-slider" id="neckWrinkles" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Glasses Glare</span><span class="val" data-for="glassesGlare">0</span></div><input type="range" class="retouch-slider" id="glassesGlare" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Double Chin</span><span class="val" data-for="doubleChin">0</span></div><input type="range" class="retouch-slider" id="doubleChin" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Body Blemish</span><span class="val" data-for="bodyBlemish">0</span></div><input type="range" class="retouch-slider" id="bodyBlemish" min="0" max="100" value="0" /></div>
+              </div>
+            </div>
+
+            <!-- 2. Skin Retouching -->
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Skin Retouching</div>
+              <div class="retouch-acc-body">
+                <div class="sub-badge">Dodge &amp; Burn</div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Dodge &amp; Burn — Even</span><span class="val" data-for="dodgeBurnEven">0</span></div><input type="range" class="retouch-slider" id="dodgeBurnEven" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Dodge &amp; Burn — Sculpt 3D</span><span class="val" data-for="dodgeBurnSculpt">0</span></div><input type="range" class="retouch-slider" id="dodgeBurnSculpt" min="0" max="100" value="0" /></div>
+
+                <div class="sub-badge">Frequency Separation</div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Low Frequency (Smoothness)</span><span class="val" data-for="freqSepLow">0</span></div><input type="range" class="retouch-slider" id="freqSepLow" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>High Frequency (Pore Texture)</span><span class="val" data-for="freqSepHigh">80</span></div><input type="range" class="retouch-slider" id="freqSepHigh" min="0" max="100" value="80" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Facial Skin Smoothing</span><span class="val" data-for="facialSkinSmooth">0</span></div><input type="range" class="retouch-slider" id="facialSkinSmooth" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Body Skin Smoothing</span><span class="val" data-for="bodySkinSmooth">0</span></div><input type="range" class="retouch-slider" id="bodySkinSmooth" min="0" max="100" value="0" /></div>
+
+                <div class="sub-badge">Skin Tone &amp; Radiance</div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Unify Complexion</span><span class="val" data-for="unifyComplexion">0</span></div><input type="range" class="retouch-slider" id="unifyComplexion" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Skin Radiance</span><span class="val" data-for="skinRadiance">0</span></div><input type="range" class="retouch-slider" id="skinRadiance" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Skin Rosy / Pinkness</span><span class="val" data-for="skinRosy">0</span></div><input type="range" class="retouch-slider" id="skinRosy" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Skin Warmth</span><span class="val" data-for="skinWarmth">0</span></div><input type="range" class="retouch-slider" id="skinWarmth" min="-100" max="100" value="0" /></div>
+              </div>
+            </div>
+
+            <!-- 3. Face Reshape -->
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Face Reshape (3D Liquify)</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>Face Width</span><span class="val" data-for="faceWidth">0</span></div><input type="range" class="retouch-slider" id="faceWidth" min="-50" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Jawline Slim</span><span class="val" data-for="jawlineSlim">0</span></div><input type="range" class="retouch-slider" id="jawlineSlim" min="-50" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Cheekbone Lift</span><span class="val" data-for="cheekboneLift">0</span></div><input type="range" class="retouch-slider" id="cheekboneLift" min="-50" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Chin Length</span><span class="val" data-for="chinLength">0</span></div><input type="range" class="retouch-slider" id="chinLength" min="-50" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Forehead Height</span><span class="val" data-for="foreheadHeight">0</span></div><input type="range" class="retouch-slider" id="foreheadHeight" min="-50" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Nose Width</span><span class="val" data-for="noseWidth">0</span></div><input type="range" class="retouch-slider" id="noseWidth" min="-50" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Nose Tip Lift</span><span class="val" data-for="noseTipLift">0</span></div><input type="range" class="retouch-slider" id="noseTipLift" min="-50" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Mouth Size</span><span class="val" data-for="mouthSize">0</span></div><input type="range" class="retouch-slider" id="mouthSize" min="-50" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Lip Plump</span><span class="val" data-for="lipPlump">0</span></div><input type="range" class="retouch-slider" id="lipPlump" min="-50" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Smile Enhance</span><span class="val" data-for="smileEnhance">0</span></div><input type="range" class="retouch-slider" id="smileEnhance" min="0" max="100" value="0" /></div>
+              </div>
+            </div>
+
+            <!-- 4. Eyes & Eyebrows -->
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Eyes &amp; Eyebrows</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>Eye Size</span><span class="val" data-for="eyeSize">0</span></div><input type="range" class="retouch-slider" id="eyeSize" min="-50" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Eye Brighten</span><span class="val" data-for="eyeBrighten">0</span></div><input type="range" class="retouch-slider" id="eyeBrighten" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Catchlight Enhancement</span><span class="val" data-for="catchlightBoost">0</span></div><input type="range" class="retouch-slider" id="catchlightBoost" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Remove Red Veins</span><span class="val" data-for="redVeins">0</span></div><input type="range" class="retouch-slider" id="redVeins" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Eyebrow Thickness</span><span class="val" data-for="eyebrowThickness">0</span></div><input type="range" class="retouch-slider" id="eyebrowThickness" min="-50" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Eyebrow Lift</span><span class="val" data-for="eyebrowLift">0</span></div><input type="range" class="retouch-slider" id="eyebrowLift" min="-50" max="100" value="0" /></div>
+              </div>
+            </div>
+
+            <!-- 5. Teeth -->
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Teeth</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>Teeth Whitening</span><span class="val" data-for="teethWhiten">0</span></div><input type="range" class="retouch-slider" id="teethWhiten" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>De-Yellowing (Desaturate)</span><span class="val" data-for="teethDesaturate">0</span></div><input type="range" class="retouch-slider" id="teethDesaturate" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Teeth Brightness</span><span class="val" data-for="teethBrighten">0</span></div><input type="range" class="retouch-slider" id="teethBrighten" min="0" max="100" value="0" /></div>
+              </div>
+            </div>
+
+            <!-- 6. Makeup -->
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Makeup</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>Highlight</span><span class="val" data-for="makeupHighlight">0</span></div><input type="range" class="retouch-slider" id="makeupHighlight" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Contour</span><span class="val" data-for="makeupContour">0</span></div><input type="range" class="retouch-slider" id="makeupContour" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Blush</span><span class="val" data-for="makeupBlush">0</span></div><input type="range" class="retouch-slider" id="makeupBlush" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Eyeshadow</span><span class="val" data-for="makeupEyeshadow">0</span></div><input type="range" class="retouch-slider" id="makeupEyeshadow" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Lipstick Intensity</span><span class="val" data-for="makeupLipstick">0</span></div><input type="range" class="retouch-slider" id="makeupLipstick" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item">
+                  <div class="s-head"><span>Lipstick Shade</span></div>
+                  <select id="makeupLipTint" class="retouch-select">
+                    <option value="rose">Velvet Rose</option>
+                    <option value="coral">Warm Coral</option>
+                    <option value="berry">Deep Berry</option>
+                    <option value="nude">Soft Nude</option>
+                    <option value="ruby">Classic Ruby Red</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 7. Hair -->
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Hair</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>Stray Hair Removal</span><span class="val" data-for="strayHair">0</span></div><input type="range" class="retouch-slider" id="strayHair" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Hair Volume</span><span class="val" data-for="hairVolume">0</span></div><input type="range" class="retouch-slider" id="hairVolume" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Fill Hair Part Line</span><span class="val" data-for="hairPartLine">0</span></div><input type="range" class="retouch-slider" id="hairPartLine" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Hair Shine &amp; Luster</span><span class="val" data-for="hairShine">0</span></div><input type="range" class="retouch-slider" id="hairShine" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Hair Dye Intensity</span><span class="val" data-for="hairDyeStrength">0</span></div><input type="range" class="retouch-slider" id="hairDyeStrength" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item">
+                  <div class="s-head"><span>Hair Dye Color</span></div>
+                  <select id="hairDyeColor" class="retouch-select">
+                    <option value="none">Original Hair Color</option>
+                    <option value="espresso">Dark Espresso Brown</option>
+                    <option value="golden_blonde">Golden Honey Blonde</option>
+                    <option value="auburn">Copper Auburn</option>
+                    <option value="silver_ash">Silver Ash</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 8. Body Reshape -->
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Body Reshape</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>Neck Slim</span><span class="val" data-for="neckSlim">0</span></div><input type="range" class="retouch-slider" id="neckSlim" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Shoulder Sculpt</span><span class="val" data-for="shoulderSculpt">0</span></div><input type="range" class="retouch-slider" id="shoulderSculpt" min="-50" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Waist Slim</span><span class="val" data-for="waistSlim">0</span></div><input type="range" class="retouch-slider" id="waistSlim" min="0" max="100" value="0" /></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODULE 3: BACKGROUND, SKY REPLACEMENT & CLOTHING -->
+          <div id="mod-bg" class="retouch-module-pane">
+            <div class="module-header-title">Background &amp; Sky Hub</div>
+
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Clothing Retouch</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>De-Wrinkle Clothing (AI)</span><span class="val" data-for="clothingDewrinkle">0</span></div><input type="range" class="retouch-slider" id="clothingDewrinkle" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Lint &amp; Dust Removal</span><span class="val" data-for="clothingLintClean">0</span></div><input type="range" class="retouch-slider" id="clothingLintClean" min="0" max="100" value="0" /></div>
+              </div>
+            </div>
+
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Backdrop &amp; Bokeh Adjustments</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>Clean Studio Backdrop</span><span class="val" data-for="backdropClean">0</span></div><input type="range" class="retouch-slider" id="backdropClean" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Remove Color Banding</span><span class="val" data-for="backdropBandingFix">0</span></div><input type="range" class="retouch-slider" id="backdropBandingFix" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Background Bokeh Blur</span><span class="val" data-for="bgBlurBokeh">0</span></div><input type="range" class="retouch-slider" id="bgBlurBokeh" min="0" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Sky Vibrance &amp; Depth</span><span class="val" data-for="skyEnhance">0</span></div><input type="range" class="retouch-slider" id="skyEnhance" min="0" max="100" value="0" /></div>
+              </div>
+            </div>
+
+            <!-- ASSET HUB UI: SKY REPLACEMENT + STUDIO BACKDROPS -->
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Asset Hub — Sky &amp; Studio Changer</div>
+              <div class="retouch-acc-body">
+                <select id="bgReplaceMode" class="retouch-select" style="margin-bottom:8px;">
+                  <option value="original">Original Background</option>
+                  <option value="sky_golden_sunset">Sky: Golden Hour Sunset (+ Relight)</option>
+                  <option value="sky_alpine_blue">Sky: Alpine Blue Clouds (+ Relight)</option>
+                  <option value="sky_dramatic_clouds">Sky: Dramatic Storm (+ Relight)</option>
+                  <option value="sky_night_stars">Sky: Starry Midnight (+ Relight)</option>
+                  <option value="pure_white">Studio: Pure White ID</option>
+                  <option value="warm_beige">Studio: Warm Editorial Beige</option>
+                  <option value="studio_grey">Studio: Neutral Grey</option>
+                  <option value="passport_blue">Studio: Corporate Passport Blue</option>
+                  <option value="moody_black">Studio: Low-Key Fine Art Black</option>
+                </select>
+                <div class="asset-hub-grid" id="bg-asset-hub-grid">
+                  <button class="asset-swatch active" data-bgmode="original" style="background:linear-gradient(135deg,#18181c,#2d2d35);"><span>Original</span></button>
+                  <button class="asset-swatch" data-bgmode="sky_golden_sunset" style="background:linear-gradient(180deg,#f97316,#fde047);"><span>Sunset Sky</span></button>
+                  <button class="asset-swatch" data-bgmode="sky_alpine_blue" style="background:linear-gradient(180deg,#1d4ed8,#93c5fd);"><span>Alpine Sky</span></button>
+                  <button class="asset-swatch" data-bgmode="sky_dramatic_clouds" style="background:linear-gradient(180deg,#334155,#94a3b8);"><span>Storm Sky</span></button>
+                  <button class="asset-swatch" data-bgmode="sky_night_stars" style="background:linear-gradient(180deg,#090d16,#1e293b);"><span>Night Stars</span></button>
+                  <button class="asset-swatch" data-bgmode="pure_white" style="background:#f8fafc;color:#09090b;"><span>Pure White</span></button>
+                  <button class="asset-swatch" data-bgmode="warm_beige" style="background:#e7d8c5;color:#09090b;"><span>Warm Beige</span></button>
+                  <button class="asset-swatch" data-bgmode="studio_grey" style="background:#64748b;"><span>Studio Grey</span></button>
+                  <button class="asset-swatch" data-bgmode="passport_blue" style="background:#2563eb;"><span>ID Blue</span></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODULE 4: CROP & TRANSFORM -->
+          <div id="mod-crop" class="retouch-module-pane">
+            <div class="module-header-title">Crop &amp; Transform</div>
+
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Rotate &amp; Perspective</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>Straighten / Rotate (°)</span><span class="val" data-for="rotateAngle">0</span></div><input type="range" class="retouch-slider" id="rotateAngle" min="-45" max="45" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Keystone Vertical</span><span class="val" data-for="keystoneVertical">0</span></div><input type="range" class="retouch-slider" id="keystoneVertical" min="-50" max="50" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Keystone Horizontal</span><span class="val" data-for="keystoneHorizontal">0</span></div><input type="range" class="retouch-slider" id="keystoneHorizontal" min="-50" max="50" value="0" /></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
+                  <button id="btn-crop-rot-left" class="retouch-sync-btn">↺ Rotate 90° Left</button>
+                  <button id="btn-crop-rot-right" class="retouch-sync-btn">↻ Rotate 90° Right</button>
+                </div>
+                <div style="margin-top:6px;">
+                  <button id="btn-flip-h" class="retouch-sync-btn" style="width:100%;">⇄ Flip Horizontal Mirror</button>
+                </div>
+              </div>
+            </div>
+          
+            <div class="retouch-acc-group">
+              <div class="retouch-acc-title">▾ Geometry</div>
+              <div class="retouch-acc-body">
+                <div class="retouch-slider-item"><div class="s-head"><span>Scale (%)</span><span class="val" data-for="geoScale">100</span></div><input type="range" class="retouch-slider" id="geoScale" min="50" max="200" value="100" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Offset X</span><span class="val" data-for="geoOffsetX">0</span></div><input type="range" class="retouch-slider" id="geoOffsetX" min="-100" max="100" value="0" /></div>
+                <div class="retouch-slider-item"><div class="s-head"><span>Offset Y</span><span class="val" data-for="geoOffsetY">0</span></div><input type="range" class="retouch-slider" id="geoOffsetY" min="-100" max="100" value="0" /></div>
+                <button id="btn-flip-v" class="retouch-sync-btn" style="width:100%;">⇅ Flip Vertical Mirror</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- FAR-RIGHT RETOUCH VERTICAL MODULE DOCK (46px) -->
+        <nav class="retouch-right-rail">
+          <button class="rail-btn" data-mod="mod-color" title="Color Adjustment (HSL, Curves, RAW, Color Match)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+          </button>
+          <button class="rail-btn active" data-mod="mod-portrait" title="Portrait Retouching (Skin, Eyes, Teeth, Liquify)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </button>
+          <button class="rail-btn" data-mod="mod-bg" title="Background &amp; Sky Changer Hub">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+          </button>
+          <button class="rail-btn" data-mod="mod-crop" title="Crop &amp; Transform">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>
+          </button>
+        </nav>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>
